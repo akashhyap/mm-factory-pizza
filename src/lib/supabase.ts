@@ -57,6 +57,8 @@ export async function createOrder(orderData: {
   tax: number;
   total: number;
   notes?: string;
+  paymentStatus?: 'pending' | 'paid';
+  paymentIntentId?: string;
 }): Promise<{ data: DbOrder | null; error: Error | null }> {
   const { data, error } = await supabase
     .from('orders')
@@ -71,7 +73,8 @@ export async function createOrder(orderData: {
       total: orderData.total,
       notes: orderData.notes || null,
       status: 'pending',
-      payment_status: 'pending',
+      payment_status: orderData.paymentStatus || 'pending',
+      payment_intent_id: orderData.paymentIntentId || null,
     })
     .select()
     .single();

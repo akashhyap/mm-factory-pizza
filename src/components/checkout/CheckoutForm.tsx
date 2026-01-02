@@ -1,6 +1,7 @@
-// Checkout page component with customer form
+// Checkout page component with customer form and Stripe payment
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { loadStripe } from '@stripe/stripe-js';
 import { useCartStore } from '../../stores/cartStore';
 import { Button } from '../ui/Button';
 import { Input, Textarea } from '../ui/Input';
@@ -9,6 +10,9 @@ import { formatCurrency, isValidIrishPhone, isValidEmail, getEstimatedPickupTime
 import { createOrder, type OrderItemJson } from '../../lib/supabase';
 import { cartItemsToOrderItems } from '../../types/order';
 import toast from 'react-hot-toast';
+
+// Initialize Stripe
+const stripePromise = loadStripe(import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY);
 
 interface CheckoutFormData {
   name: string;
@@ -23,9 +27,12 @@ interface FormErrors {
   email?: string;
 }
 
+type PaymentMethod = 'card' | 'pickup';
+
 export function CheckoutForm() {
   const { items, getSubtotal, getTax, getTotal, clearCart } = useCartStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('card');
   const [formData, setFormData] = useState<CheckoutFormData>({
     name: '',
     phone: '',
@@ -33,12 +40,24 @@ export function CheckoutForm() {
     notes: '',
   });
   const [errors, setErrors] = useState<FormErrors>({});
+  const [wasCancelled, setWasCancelled] = useState(false);
   
   const subtotal = getSubtotal();
   const tax = getTax();
   const total = getTotal();
   const isEmpty = items.length === 0;
   const estimatedPickup = getEstimatedPickupTime(25);
+
+  // Check if payment was cancelled
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('cancelled') === 'true') {
+      setWasCancelled(true);
+      toast.error('Payment was cancelled. You can try again.');
+      // Clean up URL
+      window.history.replaceState({}, '', '/checkout');
+    }
+  }, []);
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -101,8 +120,50 @@ export function CheckoutForm() {
         specialInstructions: item.specialInstructions,
         itemTotal: item.itemTotal,
       }));
+
+      // If paying with card, redirect to Stripe
+      if (paymentMethod === 'card') {
+        const response = await fetch('/api/create-checkout-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            items: orderItems,
+            customerName: formData.name.trim(),
+            customerPhone: formData.phone.trim(),
+            customerEmail: formData.email.trim() || undefined,
+            notes: formData.notes.trim() || undefined,
+            orderNumber,
+            subtotal,
+            tax,
+            total,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to create checkout session');
+        }
+
+        // Store order info for after payment
+        sessionStorage.setItem('pendingOrderNumber', orderNumber);
+        sessionStorage.setItem('pendingOrderItems', JSON.stringify(orderItems));
+        sessionStorage.setItem('pendingOrderData', JSON.stringify({
+          customerName: formData.name.trim(),
+          customerPhone: formData.phone.trim(),
+          customerEmail: formData.email.trim() || '',
+          notes: formData.notes.trim() || '',
+          subtotal,
+          tax,
+          total,
+        }));
+
+        // Redirect to Stripe Checkout
+        window.location.href = data.url;
+        return;
+      }
       
-      // Save order to Supabase
+      // Pay at pickup - create order directly
       const { data, error } = await createOrder({
         orderNumber,
         customerName: formData.name.trim(),
@@ -128,14 +189,15 @@ export function CheckoutForm() {
       // Store order number for confirmation page
       sessionStorage.setItem('lastOrderNumber', orderNumber);
       sessionStorage.setItem('lastOrderTotal', total.toString());
+      sessionStorage.setItem('lastPaymentMethod', 'pickup');
       
       // Clear cart and redirect
       clearCart();
       window.location.href = '/order-confirmation';
       
-    } catch (err) {
+    } catch (err: any) {
       console.error('Order submission error:', err);
-      toast.error('Something went wrong. Please try again.');
+      toast.error(err.message || 'Something went wrong. Please try again.');
       setIsSubmitting(false);
     }
   };
@@ -223,19 +285,69 @@ export function CheckoutForm() {
                 </div>
               </div>
               
-              {/* Payment Info */}
-              <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
-                <div className="flex items-start gap-3">
-                  <svg className="w-5 h-5 text-royal-blue mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <div>
-                    <p className="text-sm font-medium text-royal-blue">Secure Payment Coming Soon</p>
-                    <p className="text-xs text-gray-600 mt-1">
-                      Online payment will be available shortly. For now, please pay at pickup.
-                    </p>
+              {/* Payment Method Selection */}
+              <div className="space-y-3">
+                <label className="block text-sm font-medium text-gray-700">Payment Method</label>
+                
+                {/* Pay with Card */}
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod('card')}
+                  className={`w-full p-4 rounded-xl border-2 transition-all text-left flex items-center gap-4 ${
+                    paymentMethod === 'card' 
+                      ? 'border-olive bg-olive/5' 
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                    paymentMethod === 'card' ? 'border-olive' : 'border-gray-300'
+                  }`}>
+                    {paymentMethod === 'card' && (
+                      <div className="w-3 h-3 bg-olive rounded-full" />
+                    )}
                   </div>
-                </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                      </svg>
+                      <span className="font-medium text-charcoal">Pay with Card</span>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">Secure payment via Stripe</p>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b7/MasterCard_Logo.svg/200px-MasterCard_Logo.svg.png" alt="Mastercard" className="h-6" />
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Visa_Inc._logo.svg/200px-Visa_Inc._logo.svg.png" alt="Visa" className="h-4" />
+                  </div>
+                </button>
+                
+                {/* Pay at Pickup */}
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod('pickup')}
+                  className={`w-full p-4 rounded-xl border-2 transition-all text-left flex items-center gap-4 ${
+                    paymentMethod === 'pickup' 
+                      ? 'border-olive bg-olive/5' 
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                    paymentMethod === 'pickup' ? 'border-olive' : 'border-gray-300'
+                  }`}>
+                    {paymentMethod === 'pickup' && (
+                      <div className="w-3 h-3 bg-olive rounded-full" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
+                      <span className="font-medium text-charcoal">Pay at Pickup</span>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">Cash or card when collecting</p>
+                  </div>
+                </button>
               </div>
               
               <Button
@@ -244,7 +356,11 @@ export function CheckoutForm() {
                 size="lg"
                 isLoading={isSubmitting}
               >
-                Place Order • {formatCurrency(total)}
+                {paymentMethod === 'card' ? (
+                  <>Pay Now • {formatCurrency(total)}</>
+                ) : (
+                  <>Place Order • {formatCurrency(total)}</>
+                )}
               </Button>
             </form>
           </div>

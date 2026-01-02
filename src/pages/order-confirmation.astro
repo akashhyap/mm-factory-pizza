@@ -22,6 +22,7 @@ import Footer from '../components/Footer.astro';
       <div id="order-info" class="bg-olive/10 rounded-xl p-4 mb-6 hidden">
         <p class="text-sm text-gray-600">Your Order Number</p>
         <p id="order-number" class="text-2xl font-bold text-olive"></p>
+        <p id="payment-status" class="mt-2 hidden"></p>
       </div>
       
       <p class="text-lg text-gray-600 mb-8">
@@ -101,17 +102,91 @@ import Footer from '../components/Footer.astro';
 </Layout>
 
 <script>
-  // Display order number from session storage
-  const orderNumber = sessionStorage.getItem('lastOrderNumber');
-  if (orderNumber) {
+  import { useCartStore } from '../stores/cartStore';
+  import { createOrder } from '../lib/supabase';
+  
+  // Check if coming from Stripe payment
+  const urlParams = new URLSearchParams(window.location.search);
+  const sessionId = urlParams.get('session_id');
+  
+  async function handleStripeSuccess() {
+    if (sessionId) {
+      // Coming from Stripe - create order from stored data
+      const pendingOrderNumber = sessionStorage.getItem('pendingOrderNumber');
+      const pendingOrderItems = sessionStorage.getItem('pendingOrderItems');
+      const pendingOrderData = sessionStorage.getItem('pendingOrderData');
+      
+      if (pendingOrderNumber && pendingOrderItems && pendingOrderData) {
+        const items = JSON.parse(pendingOrderItems);
+        const data = JSON.parse(pendingOrderData);
+        
+        try {
+          // Create order in database
+          const { error } = await createOrder({
+            orderNumber: pendingOrderNumber,
+            customerName: data.customerName,
+            customerPhone: data.customerPhone,
+            customerEmail: data.customerEmail || undefined,
+            items: items,
+            subtotal: data.subtotal,
+            tax: data.tax,
+            total: data.total,
+            notes: data.notes || undefined,
+            paymentStatus: 'paid',
+            paymentIntentId: sessionId,
+          });
+          
+          if (!error) {
+            // Clear cart
+            useCartStore.getState().clearCart();
+            
+            // Display order number
+            displayOrderNumber(pendingOrderNumber, true);
+          }
+        } catch (e) {
+          console.error('Error creating order:', e);
+        }
+        
+        // Clean up session storage
+        sessionStorage.removeItem('pendingOrderNumber');
+        sessionStorage.removeItem('pendingOrderItems');
+        sessionStorage.removeItem('pendingOrderData');
+      }
+      
+      // Clean URL
+      window.history.replaceState({}, '', '/order-confirmation');
+    } else {
+      // Regular order (pay at pickup)
+      const orderNumber = sessionStorage.getItem('lastOrderNumber');
+      const paymentMethod = sessionStorage.getItem('lastPaymentMethod');
+      if (orderNumber) {
+        displayOrderNumber(orderNumber, paymentMethod !== 'pickup');
+        sessionStorage.removeItem('lastOrderNumber');
+        sessionStorage.removeItem('lastOrderTotal');
+        sessionStorage.removeItem('lastPaymentMethod');
+      }
+    }
+  }
+  
+  function displayOrderNumber(orderNumber: string, isPaid: boolean) {
     const orderInfo = document.getElementById('order-info');
     const orderNumberEl = document.getElementById('order-number');
+    const paymentStatus = document.getElementById('payment-status');
+    
     if (orderInfo && orderNumberEl) {
       orderInfo.classList.remove('hidden');
       orderNumberEl.textContent = orderNumber;
     }
-    // Clear after displaying
-    sessionStorage.removeItem('lastOrderNumber');
-    sessionStorage.removeItem('lastOrderTotal');
+    
+    if (paymentStatus) {
+      if (isPaid) {
+        paymentStatus.innerHTML = '<span class="text-green-600 font-medium">✓ Payment Successful</span>';
+      } else {
+        paymentStatus.innerHTML = '<span class="text-amber-600 font-medium">Pay at pickup</span>';
+      }
+      paymentStatus.classList.remove('hidden');
+    }
   }
+  
+  handleStripeSuccess();
 </script>

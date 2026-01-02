@@ -351,6 +351,11 @@ export function AdminDashboard() {
   const todaysSales = todaysPaidOrders.reduce((sum, o) => sum + (o.total || 0), 0);
   const todaysOrderCount = todaysOrders.length;
   const avgOrderValue = todaysPaidOrders.length > 0 ? todaysSales / todaysPaidOrders.length : 0;
+  // Payment stats
+  const todaysPaidOnline = todaysOrders.filter(o => o.payment_status === 'paid' && o.status !== 'cancelled');
+  const todaysPaidOnlineTotal = todaysPaidOnline.reduce((sum, o) => sum + (o.total || 0), 0);
+  const todaysPayAtPickup = todaysOrders.filter(o => o.payment_status === 'pending' && o.status !== 'cancelled');
+  const todaysPayAtPickupTotal = todaysPayAtPickup.reduce((sum, o) => sum + (o.total || 0), 0);
 
   // Show loading while checking auth
   if (checkingAuth) {
@@ -452,7 +457,7 @@ export function AdminDashboard() {
 
       <div className="max-w-7xl mx-auto p-3 md:p-6">
         {/* Dashboard Stats */}
-        <div className="grid grid-cols-3 gap-3 mb-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
           <div className="bg-white rounded-xl p-4 shadow-sm">
             <p className="text-xs text-gray-500 uppercase tracking-wide">Today's Orders</p>
             <p className="text-2xl font-bold text-charcoal">{todaysOrderCount}</p>
@@ -462,8 +467,14 @@ export function AdminDashboard() {
             <p className="text-2xl font-bold text-olive">{formatCurrency(todaysSales)}</p>
           </div>
           <div className="bg-white rounded-xl p-4 shadow-sm">
-            <p className="text-xs text-gray-500 uppercase tracking-wide">Avg. Order</p>
-            <p className="text-2xl font-bold text-royal-blue">{formatCurrency(avgOrderValue)}</p>
+            <p className="text-xs text-gray-500 uppercase tracking-wide">💳 Paid Online</p>
+            <p className="text-2xl font-bold text-green-600">{formatCurrency(todaysPaidOnlineTotal)}</p>
+            <p className="text-xs text-gray-400">{todaysPaidOnline.length} orders</p>
+          </div>
+          <div className="bg-white rounded-xl p-4 shadow-sm">
+            <p className="text-xs text-gray-500 uppercase tracking-wide">💵 Due at Pickup</p>
+            <p className="text-2xl font-bold text-amber-600">{formatCurrency(todaysPayAtPickupTotal)}</p>
+            <p className="text-xs text-gray-400">{todaysPayAtPickup.length} orders</p>
           </div>
         </div>
 
@@ -595,10 +606,13 @@ export function AdminDashboard() {
                     <div className="p-3">
                       <div className="flex items-center justify-between gap-3">
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <span className="font-bold text-charcoal">{order.order_number}</span>
                             <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
                               {order.status}
+                            </span>
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${order.payment_status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}`}>
+                              {order.payment_status === 'paid' ? '💳 Paid' : '💵 Pay@Pickup'}
                             </span>
                             {timeInfo.isUrgent && <span className="text-red-500">⚠️</span>}
                           </div>
@@ -631,7 +645,7 @@ export function AdminDashboard() {
 
           {/* Order Details Sidebar - Desktop */}
           <div className={`hidden lg:block ${selectedOrder ? 'lg:col-span-3' : 'lg:col-span-2'}`}>
-            <div className="bg-white rounded-2xl shadow-sm sticky top-24 overflow-hidden flex flex-col" style={{ maxHeight: 'calc(100vh - 120px)' }}>
+            <div className="bg-white rounded-2xl shadow-sm sticky top-24 flex flex-col" style={{ maxHeight: 'calc(100vh - 120px)' }}>
               {/* Header with Order Info */}
               <div className="p-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between flex-shrink-0">
                 <h2 className="font-bold text-charcoal">Order Details</h2>
@@ -646,7 +660,7 @@ export function AdminDashboard() {
               </div>
               
               {selectedOrder ? (
-                  <div className="p-4 space-y-4 overflow-y-auto flex-1">
+                  <div className="p-4 space-y-4 overflow-y-auto flex-1 min-h-0">
                     {/* Order Header */}
                     <div className="bg-gray-50 rounded-xl p-4">
                       <div className="flex items-center justify-between">
@@ -658,7 +672,12 @@ export function AdminDashboard() {
                           {selectedOrder.status}
                         </span>
                       </div>
-                      <p className="text-xs text-gray-400 mt-2">{new Date(selectedOrder.created_at).toLocaleString()}</p>
+                      <div className="flex items-center justify-between mt-2">
+                        <p className="text-xs text-gray-400">{new Date(selectedOrder.created_at).toLocaleString()}</p>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${selectedOrder.payment_status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                          {selectedOrder.payment_status === 'paid' ? '💳 Paid Online' : '💵 Pay at Pickup'}
+                        </span>
+                      </div>
                     </div>
 
                     {/* Customer Info */}
@@ -736,6 +755,17 @@ export function AdminDashboard() {
                     <div className="flex justify-between font-bold text-lg pt-2 border-t">
                       <span>Total</span>
                       <span className="text-olive">{formatCurrency(selectedOrder.total)}</span>
+                    </div>
+                    {/* Payment Status */}
+                    <div className={`mt-3 p-3 rounded-lg ${selectedOrder.payment_status === 'paid' ? 'bg-green-50 border border-green-200' : 'bg-amber-50 border border-amber-200'}`}>
+                      <div className="flex items-center justify-between">
+                        <span className={`text-sm font-medium ${selectedOrder.payment_status === 'paid' ? 'text-green-700' : 'text-amber-700'}`}>
+                          {selectedOrder.payment_status === 'paid' ? '✓ Payment Received' : '⏳ Payment Due at Pickup'}
+                        </span>
+                        {selectedOrder.payment_status === 'paid' && selectedOrder.payment_intent_id && (
+                          <span className="text-xs text-gray-400">ID: ...{selectedOrder.payment_intent_id.slice(-8)}</span>
+                        )}
+                      </div>
                     </div>
                   </div>
 
