@@ -15,7 +15,7 @@ const RESTAURANT = {
 };
 
 // Admin email for new order notifications
-const ADMIN_EMAIL = "akash@localleads247.com";
+const ADMIN_EMAIL = "akash@trustseo.co";
 
 // Email templates
 function getOrderPlacedEmail(order: any) {

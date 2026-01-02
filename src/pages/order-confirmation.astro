@@ -143,9 +143,12 @@ import Footer from '../components/Footer.astro';
             // Display order number
             displayOrderNumber(pendingOrderNumber, true);
             
-            // Send confirmation email to customer
-            try {
-              await fetch('/api/send-email', {
+            // Send both emails - customer confirmation and admin notification
+            const emailPromises = [];
+            
+            // Customer confirmation email
+            emailPromises.push(
+              fetch('/api/send-email', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -161,14 +164,15 @@ import Footer from '../components/Footer.astro';
                     paymentStatus: 'paid',
                   }
                 }),
-              });
-            } catch (emailError) {
-              console.error('Failed to send confirmation email:', emailError);
-            }
+              }).then(res => {
+                if (!res.ok) console.error('Customer email failed:', res.status);
+                else console.log('Customer email sent successfully');
+              }).catch(err => console.error('Customer email error:', err))
+            );
             
-            // Send notification email to admin
-            try {
-              await fetch('/api/send-email', {
+            // Admin notification email
+            emailPromises.push(
+              fetch('/api/send-email', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -186,10 +190,14 @@ import Footer from '../components/Footer.astro';
                     notes: data.notes || null,
                   }
                 }),
-              });
-            } catch (emailError) {
-              console.error('Failed to send admin notification:', emailError);
-            }
+              }).then(res => {
+                if (!res.ok) console.error('Admin email failed:', res.status);
+                else console.log('Admin email sent successfully');
+              }).catch(err => console.error('Admin email error:', err))
+            );
+            
+            // Wait for both emails to complete
+            await Promise.all(emailPromises);
           }
         } catch (e) {
           console.error('Error creating order:', e);
