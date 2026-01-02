@@ -87,11 +87,12 @@ export const POST: APIRoute = async ({ request }) => {
         customerName,
         customerPhone,
         customerEmail: customerEmail || '',
-        notes: notes || '',
+        notes: (notes || '').substring(0, 400), // Limit notes to 400 chars
         subtotal: subtotal.toString(),
         tax: tax.toString(),
         total: total.toString(),
-        items: JSON.stringify(items),
+        // Note: Full items stored in sessionStorage on client, not in metadata (500 char limit)
+        itemCount: items.length.toString(),
       },
     });
 
