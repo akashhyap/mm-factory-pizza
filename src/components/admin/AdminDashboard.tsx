@@ -402,7 +402,7 @@ export function AdminDashboard() {
         <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-8">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold mb-2">
-              <span className="text-olive">M</span>&<span className="text-accent-red">M</span> Factory
+              <span className="text-olive">M</span>&<span className="text-accent-red">M</span> Factory Pizza
             </h1>
             <p className="text-gray-600">Admin Login</p>
           </div>

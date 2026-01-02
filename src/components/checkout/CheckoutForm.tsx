@@ -342,21 +342,11 @@ export function CheckoutForm() {
                 <label className="block text-sm font-medium text-gray-700">Payment Method</label>
                 
                 {/* Pay with Card */}
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod('card')}
-                  className={`w-full p-4 rounded-xl border-2 transition-all text-left flex items-center gap-4 ${
-                    paymentMethod === 'card' 
-                      ? 'border-olive bg-olive/5' 
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
+                <div
+                  className="w-full p-4 rounded-xl border-2 border-olive bg-olive/5 text-left flex items-center gap-4"
                 >
-                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                    paymentMethod === 'card' ? 'border-olive' : 'border-gray-300'
-                  }`}>
-                    {paymentMethod === 'card' && (
-                      <div className="w-3 h-3 bg-olive rounded-full" />
-                    )}
+                  <div className="w-5 h-5 rounded-full border-2 border-olive flex items-center justify-center">
+                    <div className="w-3 h-3 bg-olive rounded-full" />
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
@@ -371,35 +361,7 @@ export function CheckoutForm() {
                     <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b7/MasterCard_Logo.svg/200px-MasterCard_Logo.svg.png" alt="Mastercard" className="h-6" />
                     <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Visa_Inc._logo.svg/200px-Visa_Inc._logo.svg.png" alt="Visa" className="h-4" />
                   </div>
-                </button>
-                
-                {/* Pay at Pickup */}
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod('pickup')}
-                  className={`w-full p-4 rounded-xl border-2 transition-all text-left flex items-center gap-4 ${
-                    paymentMethod === 'pickup' 
-                      ? 'border-olive bg-olive/5' 
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                >
-                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                    paymentMethod === 'pickup' ? 'border-olive' : 'border-gray-300'
-                  }`}>
-                    {paymentMethod === 'pickup' && (
-                      <div className="w-3 h-3 bg-olive rounded-full" />
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                      </svg>
-                      <span className="font-medium text-charcoal">Pay at Pickup</span>
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">Cash or card when collecting</p>
-                  </div>
-                </button>
+                </div>
               </div>
               
               <Button
@@ -408,11 +370,7 @@ export function CheckoutForm() {
                 size="lg"
                 isLoading={isSubmitting}
               >
-                {paymentMethod === 'card' ? (
-                  <>Pay Now • {formatCurrency(total)}</>
-                ) : (
-                  <>Place Order • {formatCurrency(total)}</>
-                )}
+                Pay Now • {formatCurrency(total)}
               </Button>
             </form>
           </div>
