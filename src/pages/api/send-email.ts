@@ -11,8 +11,11 @@ const RESTAURANT = {
   name: "M&M Factory Pizza",
   address: "Plaça Major, 3, 07460 Pollença",
   phone: "+34 871 531 423",
-  email: "orders@mmfactorypizza.com", // You can change this
+  email: "orders@mmfactorypizza.com",
 };
+
+// Admin email for new order notifications
+const ADMIN_EMAIL = "akash@localleads247.com";
 
 // Email templates
 function getOrderPlacedEmail(order: any) {
@@ -222,12 +225,84 @@ function getStatusUpdateEmail(order: any, newStatus: string) {
   };
 }
 
+// Admin notification email for new orders
+function getAdminNewOrderEmail(order: any) {
+  const itemsList = order.items.map((item: any) => 
+    `<tr>
+      <td style="padding: 10px; border-bottom: 1px solid #eee;">
+        <strong>${item.quantity}× ${item.menuItemName}</strong>
+        ${item.extras && item.extras.length > 0 ? `<br><span style="color: #666; font-size: 13px;">+ ${item.extras.map((e: any) => e.extraName).join(', ')}</span>` : ''}
+        ${item.specialInstructions ? `<br><span style="color: #f59e0b; font-size: 13px;">📝 ${item.specialInstructions}</span>` : ''}
+      </td>
+      <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">€${item.itemTotal.toFixed(2)}</td>
+    </tr>`
+  ).join('');
+
+  return {
+    subject: `🍕 NEW ORDER - ${order.orderNumber} - €${order.total.toFixed(2)}`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+      <head><meta charset="utf-8"></head>
+      <body style="margin: 0; padding: 20px; font-family: Arial, sans-serif; background-color: #f5f5f5;">
+        <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+          <!-- Header -->
+          <div style="background-color: #dc2626; padding: 20px; text-align: center;">
+            <h1 style="margin: 0; color: #ffffff; font-size: 24px;">🍕 NEW ORDER!</h1>
+          </div>
+          
+          <!-- Order Info -->
+          <div style="padding: 25px;">
+            <div style="background-color: #fef3c7; border: 2px solid #f59e0b; border-radius: 10px; padding: 15px; margin-bottom: 20px;">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                <span style="font-weight: bold; font-size: 18px;">Order #${order.orderNumber}</span>
+                <span style="font-weight: bold; font-size: 18px; color: #059669;">€${order.total.toFixed(2)}</span>
+              </div>
+              <div style="color: #666;">
+                Payment: <strong style="color: ${order.paymentStatus === 'paid' ? '#059669' : '#f59e0b'};">${order.paymentStatus === 'paid' ? '✓ PAID' : '💵 Pay at Pickup'}</strong>
+              </div>
+            </div>
+            
+            <!-- Customer Info -->
+            <h3 style="margin: 0 0 10px 0; color: #333; border-bottom: 2px solid #8B9A46; padding-bottom: 8px;">👤 Customer</h3>
+            <p style="margin: 5px 0;"><strong>Name:</strong> ${order.customerName}</p>
+            <p style="margin: 5px 0;"><strong>Phone:</strong> <a href="tel:${order.customerPhone}">${order.customerPhone}</a></p>
+            <p style="margin: 5px 0 20px;"><strong>Email:</strong> ${order.customerEmail}</p>
+            
+            <!-- Order Items -->
+            <h3 style="margin: 0 0 10px 0; color: #333; border-bottom: 2px solid #8B9A46; padding-bottom: 8px;">📋 Order Items</h3>
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
+              ${itemsList}
+              <tr style="background-color: #f0f0f0;">
+                <td style="padding: 12px; font-weight: bold;">TOTAL</td>
+                <td style="padding: 12px; text-align: right; font-weight: bold; font-size: 18px;">€${order.total.toFixed(2)}</td>
+              </tr>
+            </table>
+            
+            ${order.notes ? `
+            <div style="background-color: #fef3c7; border-radius: 8px; padding: 12px; margin-top: 15px;">
+              <strong>📝 Notes:</strong> ${order.notes}
+            </div>
+            ` : ''}
+            
+            <!-- Action Button -->
+            <div style="text-align: center; margin-top: 25px;">
+              <a href="https://mm-factory-pizza.vercel.app/admin" style="display: inline-block; background-color: #1a1a1a; color: #ffffff; padding: 14px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">Open Admin Dashboard →</a>
+            </div>
+          </div>
+        </div>
+      </body>
+      </html>
+    `
+  };
+}
+
 export const POST: APIRoute = async ({ request }) => {
   try {
     const body = await request.json();
     const { type, order, newStatus, customerEmail } = body;
 
-    if (!customerEmail) {
+    if (!customerEmail && type !== 'admin_notification') {
       return new Response(
         JSON.stringify({ error: 'Customer email is required' }),
         { status: 400, headers: { 'Content-Type': 'application/json' } }
@@ -235,11 +310,15 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     let emailContent;
+    let recipientEmail = customerEmail;
     
     if (type === 'order_placed') {
       emailContent = getOrderPlacedEmail(order);
     } else if (type === 'status_update') {
       emailContent = getStatusUpdateEmail(order, newStatus);
+    } else if (type === 'admin_notification') {
+      emailContent = getAdminNewOrderEmail(order);
+      recipientEmail = ADMIN_EMAIL;
     } else {
       return new Response(
         JSON.stringify({ error: 'Invalid email type' }),
@@ -252,7 +331,7 @@ export const POST: APIRoute = async ({ request }) => {
     // For production, you need to verify your domain
     const { data, error } = await resend.emails.send({
       from: 'M&M Factory Pizza <onboarding@resend.dev>', // Change after domain verification
-      to: customerEmail,
+      to: recipientEmail,
       subject: emailContent.subject,
       html: emailContent.html,
     });

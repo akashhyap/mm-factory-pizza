@@ -143,29 +143,52 @@ import Footer from '../components/Footer.astro';
             // Display order number
             displayOrderNumber(pendingOrderNumber, true);
             
-            // Send confirmation email if customer provided email
-            if (data.customerEmail) {
-              try {
-                await fetch('/api/send-email', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    type: 'order_placed',
+            // Send confirmation email to customer
+            try {
+              await fetch('/api/send-email', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  type: 'order_placed',
+                  customerEmail: data.customerEmail,
+                  order: {
+                    orderNumber: pendingOrderNumber,
+                    customerName: data.customerName,
+                    items: items,
+                    subtotal: data.subtotal,
+                    tax: data.tax,
+                    total: data.total,
+                    paymentStatus: 'paid',
+                  }
+                }),
+              });
+            } catch (emailError) {
+              console.error('Failed to send confirmation email:', emailError);
+            }
+            
+            // Send notification email to admin
+            try {
+              await fetch('/api/send-email', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  type: 'admin_notification',
+                  order: {
+                    orderNumber: pendingOrderNumber,
+                    customerName: data.customerName,
+                    customerPhone: data.customerPhone,
                     customerEmail: data.customerEmail,
-                    order: {
-                      orderNumber: pendingOrderNumber,
-                      customerName: data.customerName,
-                      items: items,
-                      subtotal: data.subtotal,
-                      tax: data.tax,
-                      total: data.total,
-                      paymentStatus: 'paid',
-                    }
-                  }),
-                });
-              } catch (emailError) {
-                console.error('Failed to send confirmation email:', emailError);
-              }
+                    items: items,
+                    subtotal: data.subtotal,
+                    tax: data.tax,
+                    total: data.total,
+                    paymentStatus: 'paid',
+                    notes: data.notes || null,
+                  }
+                }),
+              });
+            } catch (emailError) {
+              console.error('Failed to send admin notification:', emailError);
             }
           }
         } catch (e) {

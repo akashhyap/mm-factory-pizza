@@ -83,7 +83,9 @@ export function CheckoutForm() {
       newErrors.phone = 'Please enter a valid phone number';
     }
     
-    if (formData.email && !isValidEmail(formData.email)) {
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email is required for order updates';
+    } else if (!isValidEmail(formData.email)) {
       newErrors.email = 'Please enter a valid email address';
     }
     
@@ -183,30 +185,53 @@ export function CheckoutForm() {
         return;
       }
       
-      // Send confirmation email if customer provided email
-      if (formData.email.trim()) {
-        try {
-          await fetch('/api/send-email', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              type: 'order_placed',
+      // Send confirmation email to customer
+      try {
+        await fetch('/api/send-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'order_placed',
+            customerEmail: formData.email.trim(),
+            order: {
+              orderNumber,
+              customerName: formData.name.trim(),
+              items: orderItems,
+              subtotal,
+              tax,
+              total,
+              paymentStatus: 'pending',
+            }
+          }),
+        });
+      } catch (emailError) {
+        console.error('Failed to send confirmation email:', emailError);
+        // Don't block order completion if email fails
+      }
+      
+      // Send notification email to admin
+      try {
+        await fetch('/api/send-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'admin_notification',
+            order: {
+              orderNumber,
+              customerName: formData.name.trim(),
+              customerPhone: formData.phone.trim(),
               customerEmail: formData.email.trim(),
-              order: {
-                orderNumber,
-                customerName: formData.name.trim(),
-                items: orderItems,
-                subtotal,
-                tax,
-                total,
-                paymentStatus: 'pending',
-              }
-            }),
-          });
-        } catch (emailError) {
-          console.error('Failed to send confirmation email:', emailError);
-          // Don't block order completion if email fails
-        }
+              items: orderItems,
+              subtotal,
+              tax,
+              total,
+              paymentStatus: 'pending',
+              notes: formData.notes.trim() || null,
+            }
+          }),
+        });
+      } catch (emailError) {
+        console.error('Failed to send admin notification:', emailError);
       }
       
       // Success!
@@ -277,14 +302,15 @@ export function CheckoutForm() {
               />
               
               <Input
-                label="Email (optional)"
+                label="Email"
                 name="email"
                 type="email"
                 placeholder="john@example.com"
                 value={formData.email}
                 onChange={handleInputChange}
                 error={errors.email}
-                helperText="For order confirmation"
+                helperText="We'll send order updates to this email"
+                required
               />
               
               <Textarea
