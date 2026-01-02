@@ -1,3 +1,6 @@
+// Brevo Email API endpoint
+export const prerender = false;
+
 import type { APIRoute } from "astro";
 
 // Admin email for order notifications
