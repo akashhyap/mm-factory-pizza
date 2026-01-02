@@ -1,0 +1,25 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import { CheckoutForm } from '../components/checkout/CheckoutForm';
+---
+
+<Layout title="Checkout | M&M Factory Pizza" description="Complete your order at M&M Factory Pizza. Pickup only, fast and delicious!">
+  <Header />
+  
+  <main class="pt-24 pb-16 bg-cream min-h-screen">
+    <!-- Page Header -->
+    <div class="bg-charcoal text-white py-12 mb-8">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <h1 class="text-3xl md:text-4xl font-bold mb-2">Checkout</h1>
+        <p class="text-white/70">Complete your order for pickup</p>
+      </div>
+    </div>
+    
+    <!-- Checkout Form -->
+    <CheckoutForm client:load />
+  </main>
+  
+  <Footer />
+</Layout>

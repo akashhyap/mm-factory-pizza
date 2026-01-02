@@ -1,0 +1,173 @@
+---
+// Menu section with all pizza items
+const pizzas = [
+  { num: 1, name: "Margherita", descEs: "Tomate y mozzarella", descEn: "Tomato sauce and mozzarella cheese", vegetarian: true },
+  { num: 2, name: "Prosciutto", descEs: "Tomate, mozzarella y jamón", descEn: "Tomato sauce, mozzarella cheese and ham", vegetarian: false },
+  { num: 3, name: "Funghi", descEs: "Tomate, mozzarella y champiñones", descEn: "Tomato sauce, mozzarella cheese and mushrooms", vegetarian: true },
+  { num: 4, name: "Genovese", descEs: "Tomate, mozzarella, jamón y champiñones", descEn: "Tomato sauce, mozzarella cheese, ham and mushrooms", vegetarian: false },
+  { num: 5, name: "Carciofi", descEs: "Tomate, mozzarella y alcachofas", descEn: "Tomato sauce, mozzarella cheese and artichokes", vegetarian: true },
+  { num: 6, name: "Salame", descEs: "Tomate, mozzarella y salami", descEn: "Tomato sauce, mozzarella cheese and salami", vegetarian: false },
+  { num: 7, name: "4 Stagioni", descEs: "Tomate, mozzarella, jamón, champiñones, salami, alcachofas", descEn: "Tomato sauce, mozzarella cheese, ham, mushrooms, salami, artichokes", vegetarian: false },
+  { num: 8, name: "Siciliana", descEs: "Tomate, mozzarella, berenjena, tomate seco y albahaca", descEn: "Tomato sauce, mozzarella cheese, eggplant, dried tomato and basil", vegetarian: true },
+  { num: 9, name: "Tonno e Cipolla", descEs: "Tomate, mozzarella, atún y cebolla", descEn: "Tomato sauce, mozzarella cheese, tuna fish and onion", vegetarian: false },
+  { num: 10, name: "Campagnola", descEs: "Tomate, mozzarella, brócoli, espinacas y champiñones", descEn: "Tomato sauce, mozzarella cheese, broccoli, spinach, mushrooms", vegetarian: true },
+  { num: 11, name: "Etna", descEs: "Tomate, mozzarella, salami picante y aceite picante casero", descEn: "Tomato sauce, mozzarella cheese, spicy salami and homemade spicy oil", vegetarian: false },
+  { num: 12, name: "San Giovese", descEs: "Tomate, mozzarella, espinacas y gambas", descEn: "Tomato sauce, mozzarella cheese, spinach and prawns", vegetarian: false },
+  { num: 13, name: "Mari e Monti", descEs: "Tomate, mozzarella, brócoli, gambas y piñones", descEn: "Tomato sauce, mozzarella cheese, broccoli, prawns and pinions", vegetarian: false },
+  { num: 14, name: "Vegetariana", descEs: "Tomate, mozzarella, verduras frescas y aceite de albahaca", descEn: "Tomato sauce, mozzarella cheese, fresh vegetables and basil oil", vegetarian: true },
+  { num: 15, name: "Palermitana", descEs: "Tomate, mozzarella, alcachofas, salami, aceitunas y anchoas", descEn: "Tomato sauce, mozzarella cheese, artichokes, salami, olives and anchovies", vegetarian: false },
+  { num: 16, name: "Italia", descEs: "Tomate, mozzarella, tomate fresco, mozzarella fresca y albahaca", descEn: "Tomato sauce, mozzarella cheese, fresh tomato, fresh mozzarella cheese and basil", vegetarian: true },
+  { num: 17, name: "Parmigiana", descEs: "Tomate, mozzarella, berenjena, jamón, huevo y parmesano", descEn: "Tomato sauce, mozzarella cheese, eggplant, ham, egg and parmesan cheese", vegetarian: false },
+  { num: 18, name: "4 Formaggi", descEs: "Tomate, mozzarella y 4 quesos variados", descEn: "Tomato sauce, mozzarella cheese and 4 mixed cheeses", vegetarian: true },
+  { num: 19, name: "Pancetta", descEs: "Tomate, mozzarella, bacon, guisantes y pimiento rojo", descEn: "Tomato sauce, mozzarella cheese, bacon, green peas and red pepper", vegetarian: false },
+  { num: 20, name: "Frutti di Mare", descEs: "Tomate, mozzarella, marisco, ajo y perejil", descEn: "Tomato sauce, mozzarella cheese, seafood, garlic and parsley", vegetarian: false },
+  { num: 22, name: "Parma", descEs: "Tomate, mozzarella, jamón serrano, rúcula y parmesano", descEn: "Tomato sauce, mozzarella cheese, serrano ham, arugula and parmesan", vegetarian: false },
+  { num: 23, name: "Islas Baleares", descEs: "Tomate, mozzarella, sobrasada, queso mahón y miel", descEn: "Tomato sauce, mozzarella cheese, sobrasada, Mahon cheese and honey", vegetarian: false },
+  { num: 24, name: "Barbacoa", descEs: "Tomate, mozzarella, carne, huevo y salsa barbacoa", descEn: "Tomato sauce, mozzarella cheese, meat, egg and barbecue sauce", vegetarian: false },
+  { num: 25, name: "Hawaiana", descEs: "Tomate, mozzarella, jamón y piña", descEn: "Tomato sauce, mozzarella cheese, ham and pineapple", vegetarian: false },
+  { num: 26, name: "Catanese", descEs: "Tomate, mozzarella, pollo, huevo y mayonesa", descEn: "Tomato sauce, mozzarella cheese, chicken, egg and mayonnaise", vegetarian: false },
+  { num: 27, name: "Sirgusana", descEs: "Tomate, mozzarella, mejillones, pimienta negra, cebolla, ajo y perejil", descEn: "Tomato sauce, mozzarella cheese, mussels, black pepper, onion, garlic and parsley", vegetarian: false },
+  { num: 28, name: "Vittorise", descEs: "Tomate, mozzarella, berenjena, champiñones y gorgonzola", descEn: "Tomato sauce, mozzarella cheese, eggplant, mushrooms and gorgonzola cheese", vegetarian: true },
+  { num: 29, name: "Piemontese", descEs: "Tomate, mozzarella, calabacín y queso emmental", descEn: "Tomato sauce, mozzarella cheese, zucchini and emmental cheese", vegetarian: true },
+  { num: 30, name: "Capri", descEs: "Tomate, mozzarella, queso de cabra, tomate fresco y rúcula", descEn: "Tomato sauce, mozzarella cheese, goat cheese, fresh tomato and arugula", vegetarian: true },
+  { num: 31, name: "La Dolce Vita", descEs: "Pizza con nutella y azúcar glass", descEn: "Pizza with nutella and powdered sugar", vegetarian: true },
+];
+
+const calzones = [
+  { num: 32, name: "Clasico", descEs: "Tomate, mozzarella, jamón y champiñones", descEn: "Tomato sauce, mozzarella cheese, ham and mushrooms", vegetarian: false },
+  { num: 33, name: "Vegetariano", descEs: "Tomate, mozzarella y verduras frescas", descEn: "Tomato sauce, mozzarella cheese and fresh vegetables", vegetarian: true },
+  { num: 34, name: "4 Formaggi", descEs: "Tomate, mozzarella y 4 quesos variados", descEn: "Tomato sauce, mozzarella cheese and 4 mixed cheeses", vegetarian: true },
+];
+
+import pizzaBg from '../assets/pizza-Icons.png';
+---
+
+<section id="menu" class="py-20 md:py-28 bg-white relative overflow-hidden">
+  <!-- Pizza icons background - smaller icons tiled throughout -->
+  <div class="absolute inset-0 opacity-[0.04] pointer-events-none" style={`background-image: url(${pizzaBg.src}); background-size: 500px auto; background-repeat: repeat; background-position: center top;`}></div>
+  
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+    <!-- Pizzas Section -->
+    <div class="mb-20">
+      <div class="flex items-center gap-4 mb-10">
+        <div class="w-12 h-12 bg-accent-red rounded-2xl flex items-center justify-center shadow-lg shadow-accent-red/20">
+          <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <circle cx="12" cy="12" r="10" stroke-width="2"/>
+            <circle cx="12" cy="12" r="6" stroke-width="1.5"/>
+            <circle cx="9" cy="10" r="1.5" fill="currentColor"/>
+            <circle cx="14" cy="9" r="1" fill="currentColor"/>
+            <circle cx="15" cy="13" r="1.5" fill="currentColor"/>
+          </svg>
+        </div>
+        <div>
+          <h3 class="text-2xl font-bold text-charcoal">Pizzas</h3>
+          <p class="text-warm-gray text-sm">31 varieties to choose from</p>
+        </div>
+      </div>
+      
+      <!-- Pizza grid with elegant cards -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-1">
+        {pizzas.map((pizza, index) => (
+          <div class="group py-5 border-b border-gray-100 hover:border-accent-red/30 transition-colors duration-300">
+            <div class="flex items-start gap-4">
+              <span class="text-3xl font-light text-gray-200 group-hover:text-accent-red/30 transition-colors duration-300 tabular-nums w-10">
+                {String(pizza.num).padStart(2, '0')}
+              </span>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2">
+                  <h4 class="font-semibold text-charcoal group-hover:text-accent-red transition-colors duration-300">
+                    {pizza.name}
+                  </h4>
+                  {pizza.vegetarian && (
+                    <span class="shrink-0 w-5 h-5 bg-olive/10 rounded-full flex items-center justify-center" title="Vegetarian">
+                      <svg class="w-3 h-3 text-olive" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 2C7.24 2 5 4.24 5 7c0 2.85 2.92 7.21 5 9.88 2.11-2.69 5-7 5-9.88 0-2.76-2.24-5-5-5zm0 7.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z"/>
+                      </svg>
+                    </span>
+                  )}
+                </div>
+                <p class="text-warm-gray text-sm mt-1 leading-relaxed">{pizza.descEs}</p>
+                <p class="text-warm-gray/60 text-xs mt-0.5 italic">{pizza.descEn}</p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <!-- Calzone Section -->
+    <div class="mb-16">
+      <div class="flex items-center gap-4 mb-10">
+        <div class="w-12 h-12 bg-olive rounded-2xl flex items-center justify-center shadow-lg shadow-olive/20">
+          <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 12c0-4.418 3.582-8 8-8s8 3.582 8 8" stroke-linecap="round"/>
+            <ellipse cx="12" cy="12" rx="8" ry="4"/>
+          </svg>
+        </div>
+        <div>
+          <h3 class="text-2xl font-bold text-charcoal">Calzone</h3>
+          <p class="text-warm-gray text-sm">Folded to perfection</p>
+        </div>
+      </div>
+      
+      <!-- Calzone cards - horizontal layout -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {calzones.map((calzone) => (
+          <div class="group relative bg-gradient-to-br from-cream to-warm-beige rounded-2xl p-6 hover:shadow-lg transition-all duration-300 border border-gray-100 hover:border-olive/30">
+            <span class="absolute top-4 right-4 text-4xl font-light text-olive/20 group-hover:text-olive/40 transition-colors">
+              {String(calzone.num).padStart(2, '0')}
+            </span>
+            <div class="flex items-center gap-2 mb-3">
+              <h4 class="font-semibold text-charcoal text-lg group-hover:text-olive transition-colors duration-300">
+                {calzone.name}
+              </h4>
+              {calzone.vegetarian && (
+                <span class="shrink-0 w-5 h-5 bg-olive/10 rounded-full flex items-center justify-center" title="Vegetarian">
+                  <svg class="w-3 h-3 text-olive" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10 2C7.24 2 5 4.24 5 7c0 2.85 2.92 7.21 5 9.88 2.11-2.69 5-7 5-9.88 0-2.76-2.24-5-5-5zm0 7.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z"/>
+                  </svg>
+                </span>
+              )}
+            </div>
+            <p class="text-warm-gray text-sm leading-relaxed">{calzone.descEs}</p>
+            <p class="text-warm-gray/60 text-xs mt-0.5 italic">{calzone.descEn}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <!-- Notes - Elegant bottom bar -->
+    <div class="relative">
+      <div class="absolute inset-0 bg-gradient-to-r from-charcoal via-charcoal to-charcoal rounded-2xl"></div>
+      <div class="relative rounded-2xl p-8 md:p-10">
+        <div class="flex flex-col lg:flex-row items-center justify-between gap-8">
+          <!-- Left side - Important notes -->
+          <div class="flex flex-wrap items-center justify-center lg:justify-start gap-6 text-white/80">
+            <div class="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-full">
+              <svg class="w-4 h-4 text-accent-red" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+              </svg>
+              <span class="text-sm">No changes accepted</span>
+            </div>
+            <div class="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-full">
+              <span class="text-sm">Extra ingredients <span class="text-white font-semibold">€1.50</span></span>
+            </div>
+            <div class="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-full">
+              <span class="text-sm">Prawns or salmon <span class="text-white font-semibold">€2</span></span>
+            </div>
+          </div>
+          
+          <!-- Right side - Vegetarian legend -->
+          <div class="flex items-center gap-2 text-white/60">
+            <span class="w-5 h-5 bg-olive/20 rounded-full flex items-center justify-center">
+              <svg class="w-3 h-3 text-olive" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M10 2C7.24 2 5 4.24 5 7c0 2.85 2.92 7.21 5 9.88 2.11-2.69 5-7 5-9.88 0-2.76-2.24-5-5-5zm0 7.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z"/>
+              </svg>
+            </span>
+            <span class="text-sm">Vegetarian option</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

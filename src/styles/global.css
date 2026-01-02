@@ -1,0 +1,105 @@
+@import "tailwindcss";
+
+/* Local Poppins font faces */
+@font-face {
+  font-family: 'Poppins';
+  src: url('/fonts/Poppins-Light-subset.woff2') format('woff2');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Poppins';
+  src: url('/fonts/Poppins-Regular-subset.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Poppins';
+  src: url('/fonts/Poppins-Medium-subset.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Poppins';
+  src: url('/fonts/Poppins-SemiBold-subset.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Poppins';
+  src: url('/fonts/Poppins-Bold-subset.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@theme {
+  --font-sans: 'Poppins', system-ui, -apple-system, sans-serif;
+  
+  /* Italian flag colors */
+  --color-italian-green: #008C45;
+  --color-italian-green-dark: #006B35;
+  --color-italian-red: #CD212A;
+  --color-italian-red-dark: #A81B22;
+  
+  /* Neutrals */
+  --color-cream: #FAFAFA;
+  --color-warm-beige: #F5F5F5;
+  --color-charcoal: #2C2C2C;
+  --color-dark-charcoal: #1A1A1A;
+  --color-warm-gray: #6B7280;
+  
+  /* Button color - Royal Blue */
+  --color-royal-blue: #1E5FA8;
+  --color-royal-blue-dark: #174A85;
+  
+  /* Aliases for easier use */
+  --color-accent-red: #CD212A;
+  --color-accent-red-dark: #A81B22;
+  --color-olive: #008C45;
+  --color-olive-dark: #006B35;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-sans);
+}
+
+/* Fade-in animation */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+.animation-delay-200 {
+  animation-delay: 200ms;
+}
+
+.animation-delay-400 {
+  animation-delay: 400ms;
+}
+
+.animation-delay-600 {
+  animation-delay: 600ms;
+}

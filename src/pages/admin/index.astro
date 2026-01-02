@@ -1,0 +1,10 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { AdminDashboard } from '../../components/admin/AdminDashboard';
+---
+
+<Layout title="Admin Dashboard | M&M Factory Pizza">
+  <main class="min-h-screen bg-gray-50">
+    <AdminDashboard client:load />
+  </main>
+</Layout>

@@ -1,0 +1,317 @@
+---
+// Menu section - Featured pizzas and calzones with card design
+import margheritaImg from '../assets/margherita.jpg';
+import stagioni4Img from '../assets/4-stagion.jpg';
+import vegetarianaImg from '../assets/vegetariana.jpg';
+import parmaImg from '../assets/parma.jpg';
+import formaggi4Img from '../assets/4-formaggi.jpg';
+import islasBalearesImg from '../assets/islas-baleares.jpg';
+import calzoneClassicoImg from '../assets/calzone-calcico.jpg';
+import calzoneVegetarianoImg from '../assets/vegetariano-calzone.jpg';
+import calzone4FormaggiImg from '../assets/4-formaggi-calzone.jpg';
+
+const featuredPizzas = [
+  { 
+    num: 1, 
+    name: "Margherita", 
+    descEs: "Tomate y mozzarella", 
+    descEn: "Tomato sauce and mozzarella cheese", 
+    vegetarian: true,
+    image: margheritaImg.src
+  },
+  { 
+    num: 7, 
+    name: "4 Stagioni", 
+    descEs: "Tomate, mozzarella, jamón, champiñones, salami, alcachofas", 
+    descEn: "Tomato sauce, mozzarella, ham, mushrooms, salami, artichokes", 
+    vegetarian: false,
+    image: stagioni4Img.src
+  },
+  { 
+    num: 14, 
+    name: "Vegetariana", 
+    descEs: "Tomate, mozzarella, verduras frescas y aceite de albahaca", 
+    descEn: "Tomato sauce, mozzarella, fresh vegetables and basil oil", 
+    vegetarian: true,
+    image: vegetarianaImg.src
+  },
+  { 
+    num: 22, 
+    name: "Parma", 
+    descEs: "Tomate, mozzarella, jamón serrano, rúcula y parmesano", 
+    descEn: "Tomato sauce, mozzarella, serrano ham, arugula and parmesan", 
+    vegetarian: false,
+    image: parmaImg.src
+  },
+  { 
+    num: 18, 
+    name: "4 Formaggi", 
+    descEs: "Tomate, mozzarella y 4 quesos variados", 
+    descEn: "Tomato sauce, mozzarella and 4 mixed cheeses", 
+    vegetarian: true,
+    image: formaggi4Img.src
+  },
+  { 
+    num: 23, 
+    name: "Islas Baleares", 
+    descEs: "Tomate, mozzarella, sobrasada, queso mahón y miel", 
+    descEn: "Tomato sauce, mozzarella, sobrasada, Mahon cheese and honey", 
+    vegetarian: false,
+    image: islasBalearesImg.src
+  },
+];
+
+const calzones = [
+  { 
+    num: 32, 
+    name: "Clasico", 
+    descEs: "Tomate, mozzarella, jamón y champiñones", 
+    descEn: "Tomato sauce, mozzarella cheese, ham and mushrooms", 
+    vegetarian: false,
+    image: calzoneClassicoImg.src
+  },
+  { 
+    num: 33, 
+    name: "Vegetariano", 
+    descEs: "Tomate, mozzarella y verduras frescas", 
+    descEn: "Tomato sauce, mozzarella cheese and fresh vegetables", 
+    vegetarian: true,
+    image: calzoneVegetarianoImg.src
+  },
+  { 
+    num: 34, 
+    name: "4 Formaggi", 
+    descEs: "Tomate, mozzarella y 4 quesos variados", 
+    descEn: "Tomato sauce, mozzarella cheese and 4 mixed cheeses", 
+    vegetarian: true,
+    image: calzone4FormaggiImg.src
+  },
+];
+---
+
+<section id="menu" class="py-20 md:py-28 bg-white relative overflow-hidden">
+
+  
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+    
+    <!-- Section header -->
+    <div class="text-center mb-16">
+      <span class="inline-flex items-center gap-2 text-olive font-medium text-sm uppercase tracking-wider">
+        <span class="w-8 h-[2px] bg-olive"></span>
+        Delicious Choices
+        <span class="w-8 h-[2px] bg-olive"></span>
+      </span>
+      <h2 class="text-3xl md:text-4xl lg:text-5xl font-bold text-charcoal mt-4">
+        Our Menu
+      </h2>
+      <p class="text-warm-gray mt-4 max-w-xl mx-auto">
+        Handcrafted with passion, baked to perfection
+      </p>
+    </div>
+
+    <!-- Price highlight banner -->
+    <div class="flex justify-center mb-16">
+      <div class="inline-flex items-center gap-6 bg-gradient-to-r from-charcoal to-charcoal/90 text-white px-8 py-4 rounded-2xl shadow-xl">
+        <div class="text-center">
+          <p class="text-xs uppercase tracking-wider text-white/60">All Pizzas</p>
+          <p class="text-3xl font-bold">€9.50</p>
+        </div>
+        <div class="w-px h-10 bg-white/20"></div>
+        <div class="text-center">
+          <p class="text-xs uppercase tracking-wider text-white/60">All Calzones</p>
+          <p class="text-3xl font-bold">€9.50</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Featured Pizzas Section -->
+    <div class="mb-16">
+      <div class="flex items-center justify-between mb-10">
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 bg-accent-red rounded-2xl flex items-center justify-center shadow-lg shadow-accent-red/20">
+            <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <circle cx="12" cy="12" r="10" stroke-width="2"/>
+              <circle cx="12" cy="12" r="6" stroke-width="1.5"/>
+              <circle cx="9" cy="10" r="1.5" fill="currentColor"/>
+              <circle cx="14" cy="9" r="1" fill="currentColor"/>
+              <circle cx="15" cy="13" r="1.5" fill="currentColor"/>
+            </svg>
+          </div>
+          <div>
+            <h3 class="text-2xl font-bold text-charcoal">Pizzas</h3>
+            <p class="text-warm-gray text-sm">31 varieties to choose from</p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Pizza Cards Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10 lg:gap-y-18">
+        {featuredPizzas.map((pizza) => (
+          <div class="group relative pb-12">
+            <!-- Image container -->
+            <div class="relative rounded-2xl overflow-hidden shadow-lg">
+              <div class="aspect-[4/3]">
+                <img 
+                  src={pizza.image} 
+                  alt={pizza.name}
+                  class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                  loading="lazy"
+                />
+              </div>
+              <!-- Vegetarian badge - Green with leaf -->
+              {pizza.vegetarian && (
+                <div class="absolute top-3 right-3 w-5 h-5 bg-white border-[1.5px] border-olive rounded flex items-center justify-center shadow-md">
+                  <div class="w-2 h-2 bg-olive rounded-full"></div>
+                </div>
+              )}
+              <!-- Non-vegetarian badge - Red indicator -->
+              {!pizza.vegetarian && (
+                <div class="absolute top-3 right-3 w-5 h-5 bg-white border-[1.5px] border-accent-red rounded flex items-center justify-center shadow-md">
+                  <div class="w-2 h-2 bg-accent-red rounded-full"></div>
+                </div>
+              )}
+            </div>
+            
+            <!-- Floating Content Card -->
+            <div class="absolute left-4 right-4 -bottom-2 bg-white rounded-2xl p-5 shadow-xl text-center transform group-hover:-translate-y-2 transition-transform duration-500">
+              <h4 class="text-base font-bold text-charcoal uppercase tracking-wide mb-2">
+                {pizza.name}
+              </h4>
+              
+              <!-- Descriptions -->
+              <p class="text-warm-gray text-xs leading-relaxed mb-1">{pizza.descEs}</p>
+              <p class="text-warm-gray/50 text-xs italic mb-3">{pizza.descEn}</p>
+              
+              <!-- Order button -->
+              <a 
+                href="tel:+34871531423"
+                class="inline-flex items-center justify-center px-5 py-2 bg-royal-blue text-white text-xs font-semibold rounded-full hover:bg-royal-blue-dark transition-all duration-300 shadow-md hover:shadow-lg uppercase tracking-wide"
+              >
+                Order Now
+              </a>
+            </div>
+          </div>
+        ))}
+      </div>
+      
+      <!-- View All Menu Button -->
+      <div class="text-center mt-12">
+        <a 
+          href="/menu"
+          class="inline-flex items-center gap-3 px-8 py-4 bg-charcoal text-white font-semibold rounded-full hover:bg-charcoal/90 transition-all duration-300 shadow-lg hover:shadow-xl group"
+        >
+          <span>View All 31 Pizzas</span>
+          <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+
+    <!-- Calzone Section -->
+    <div class="mb-16">
+      <div class="flex items-center gap-4 mb-10">
+        <div class="w-12 h-12 bg-olive rounded-2xl flex items-center justify-center shadow-lg shadow-olive/20">
+          <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 12c0-4.418 3.582-8 8-8s8 3.582 8 8" stroke-linecap="round"/>
+            <ellipse cx="12" cy="12" rx="8" ry="4"/>
+          </svg>
+        </div>
+        <div>
+          <h3 class="text-2xl font-bold text-charcoal">Calzone</h3>
+          <p class="text-warm-gray text-sm">Folded to perfection</p>
+        </div>
+      </div>
+      
+      <!-- Calzone Cards Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
+        {calzones.map((calzone) => (
+          <div class="group relative pb-12">
+            <!-- Image container -->
+            <div class="relative rounded-2xl overflow-hidden shadow-lg">
+              <div class="aspect-[4/3]">
+                <img 
+                  src={calzone.image} 
+                  alt={calzone.name}
+                  class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                  loading="lazy"
+                />
+              </div>
+              <!-- Vegetarian badge - Green with dot -->
+              {calzone.vegetarian && (
+                <div class="absolute top-3 right-3 w-5 h-5 bg-white border-[1.5px] border-olive rounded flex items-center justify-center shadow-md">
+                  <div class="w-2 h-2 bg-olive rounded-full"></div>
+                </div>
+              )}
+              <!-- Non-vegetarian badge - Red indicator -->
+              {!calzone.vegetarian && (
+                <div class="absolute top-3 right-3 w-5 h-5 bg-white border-[1.5px] border-accent-red rounded flex items-center justify-center shadow-md">
+                  <div class="w-2 h-2 bg-accent-red rounded-full"></div>
+                </div>
+              )}
+            </div>
+            
+            <!-- Floating Content Card -->
+            <div class="absolute left-4 right-4 -bottom-2 bg-white rounded-2xl p-5 shadow-xl text-center transform group-hover:-translate-y-2 transition-transform duration-500">
+              <h4 class="text-base font-bold text-charcoal uppercase tracking-wide mb-2">
+                {calzone.name}
+              </h4>
+              
+              <!-- Descriptions -->
+              <p class="text-warm-gray text-xs leading-relaxed mb-1">{calzone.descEs}</p>
+              <p class="text-warm-gray/50 text-xs italic mb-3">{calzone.descEn}</p>
+              
+              <!-- Order button -->
+              <a 
+                href="tel:+34871531423"
+                class="inline-flex items-center justify-center px-5 py-2 bg-royal-blue text-white text-xs font-semibold rounded-full hover:bg-royal-blue-dark transition-all duration-300 shadow-md hover:shadow-lg uppercase tracking-wide"
+              >
+                Order Now
+              </a>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <!-- Notes - Elegant bottom bar -->
+    <div class="relative">
+      <div class="absolute inset-0 bg-gradient-to-r from-charcoal via-charcoal to-charcoal rounded-2xl"></div>
+      <div class="relative rounded-2xl p-8 md:p-10">
+        <div class="flex flex-col lg:flex-row items-center justify-between gap-8">
+          <!-- Left side - Important notes -->
+          <div class="flex flex-wrap items-center justify-center lg:justify-start gap-4 text-white/80">
+            <div class="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-full">
+              <svg class="w-4 h-4 text-accent-red" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+              </svg>
+              <span class="text-sm">No changes accepted</span>
+            </div>
+            <div class="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-full">
+              <span class="text-sm">Extra ingredients <span class="text-white font-semibold">€1.50</span></span>
+            </div>
+            <div class="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-full">
+              <span class="text-sm">Prawns/Salmon <span class="text-white font-semibold">+€2</span></span>
+            </div>
+          </div>
+          
+          <!-- Right side - Legend -->
+          <div class="flex items-center gap-4 text-white/60">
+            <div class="flex items-center gap-2">
+              <span class="w-5 h-5 bg-white border-2 border-olive rounded flex items-center justify-center">
+                <div class="w-2 h-2 bg-olive rounded-full"></div>
+              </span>
+              <span class="text-sm">Vegetarian</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="w-5 h-5 bg-white border-2 border-accent-red rounded flex items-center justify-center">
+                <div class="w-2 h-2 bg-accent-red rounded-full"></div>
+              </span>
+              <span class="text-sm">Non-Veg</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

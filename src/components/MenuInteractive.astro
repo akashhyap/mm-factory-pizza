@@ -1,0 +1,96 @@
+---
+// Interactive Menu section with cart functionality
+// This replaces static menu with Add to Cart buttons
+import { InteractiveMenu } from './menu/InteractiveMenu';
+---
+
+<section id="menu" class="py-20 md:py-28 bg-white relative overflow-hidden">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+    
+    <!-- Section header -->
+    <div class="text-center mb-16">
+      <span class="inline-flex items-center gap-2 text-olive font-medium text-sm uppercase tracking-wider">
+        <span class="w-8 h-[2px] bg-olive"></span>
+        Delicious Choices
+        <span class="w-8 h-[2px] bg-olive"></span>
+      </span>
+      <h2 class="text-3xl md:text-4xl lg:text-5xl font-bold text-charcoal mt-4">
+        Our Menu
+      </h2>
+      <p class="text-warm-gray mt-4 max-w-xl mx-auto">
+        Handcrafted with passion, baked to perfection. Order online for pickup!
+      </p>
+    </div>
+
+    <!-- Price highlight banner -->
+    <div class="flex justify-center mb-16">
+      <div class="inline-flex items-center gap-6 bg-gradient-to-r from-charcoal to-charcoal/90 text-white px-8 py-4 rounded-2xl shadow-xl">
+        <div class="text-center">
+          <p class="text-xs uppercase tracking-wider text-white/60">All Pizzas</p>
+          <p class="text-3xl font-bold">€9.50</p>
+        </div>
+        <div class="w-px h-10 bg-white/20"></div>
+        <div class="text-center">
+          <p class="text-xs uppercase tracking-wider text-white/60">All Calzones</p>
+          <p class="text-3xl font-bold">€9.50</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Interactive Menu with Cart -->
+    <InteractiveMenu client:load />
+
+    <!-- View All Menu Button -->
+    <div class="text-center mt-12">
+      <a 
+        href="/menu"
+        class="inline-flex items-center gap-3 px-8 py-4 bg-charcoal text-white font-semibold rounded-full hover:bg-charcoal/90 transition-all duration-300 shadow-lg hover:shadow-xl group"
+      >
+        <span>View All 31 Pizzas</span>
+        <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+        </svg>
+      </a>
+    </div>
+
+    <!-- Notes - Elegant bottom bar -->
+    <div class="relative mt-16">
+      <div class="absolute inset-0 bg-gradient-to-r from-charcoal via-charcoal to-charcoal rounded-2xl"></div>
+      <div class="relative rounded-2xl p-8 md:p-10">
+        <div class="flex flex-col lg:flex-row items-center justify-between gap-8">
+          <!-- Left side - Important notes -->
+          <div class="flex flex-wrap items-center justify-center lg:justify-start gap-4 text-white/80">
+            <div class="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-full">
+              <svg class="w-4 h-4 text-olive" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+              </svg>
+              <span class="text-sm">Order online for pickup</span>
+            </div>
+            <div class="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-full">
+              <span class="text-sm">Extra ingredients <span class="text-white font-semibold">€1.50</span></span>
+            </div>
+            <div class="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-full">
+              <span class="text-sm">Prawns/Salmon <span class="text-white font-semibold">+€2</span></span>
+            </div>
+          </div>
+          
+          <!-- Right side - Legend -->
+          <div class="flex items-center gap-4 text-white/60">
+            <div class="flex items-center gap-2">
+              <span class="w-5 h-5 bg-white border-2 border-olive rounded flex items-center justify-center">
+                <div class="w-2 h-2 bg-olive rounded-full"></div>
+              </span>
+              <span class="text-sm">Vegetarian</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="w-5 h-5 bg-white border-2 border-accent-red rounded flex items-center justify-center">
+                <div class="w-2 h-2 bg-accent-red rounded-full"></div>
+              </span>
+              <span class="text-sm">Non-Veg</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
