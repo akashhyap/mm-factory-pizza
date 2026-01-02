@@ -4,7 +4,7 @@ export const prerender = false;
 import type { APIRoute } from "astro";
 
 // Admin email for order notifications
-const ADMIN_EMAIL = "akash@trustseo.co";
+const ADMIN_EMAIL = "akash.kashhyap@gmail.com";
 
 // Brevo API endpoint
 const BREVO_API_URL = "https://api.brevo.com/v3/smtp/email";
@@ -60,7 +60,7 @@ async function sendBrevoEmail(
         "content-type": "application/json",
       },
       body: JSON.stringify({
-        sender: { name: "M&M Factory Pizza", email: "akash@trustseo.co" },
+        sender: { name: "M&M Factory Pizza", email: "akash.kashhyap@gmail.com" },
         to: [{ email: to }],
         subject: subject,
         htmlContent: htmlContent,
