@@ -247,19 +247,23 @@ export function AdminDashboard() {
       // Send email notification if customer has email
       if (order?.customer_email && ['confirmed', 'preparing', 'ready', 'completed'].includes(newStatus)) {
         try {
-          await fetch('/api/send-email', {
+          const emailResponse = await fetch('/api/send-email', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               type: 'status_update',
               customerEmail: order.customer_email,
               order: {
-                orderNumber: order.order_number,
-                customerName: order.customer_name,
+                order_number: order.order_number,
+                customer_name: order.customer_name,
+                total: order.total,
               },
               newStatus,
             }),
           });
+          if (!emailResponse.ok) {
+            console.error('Email API error:', await emailResponse.text());
+          }
         } catch (emailError) {
           console.error('Failed to send status update email:', emailError);
           // Don't block status update if email fails

@@ -15,7 +15,7 @@ const RESTAURANT = {
 };
 
 // Admin email for new order notifications
-const ADMIN_EMAIL = "akash@trustseo.co";
+const ADMIN_EMAIL = "akash@localleads247.com";
 
 // Email templates
 function getOrderPlacedEmail(order: any) {
@@ -182,6 +182,11 @@ function getOrderPlacedEmail(order: any) {
 }
 
 function getStatusUpdateEmail(order: any, newStatus: string) {
+  // Handle both field name formats (snake_case from DB, camelCase from frontend)
+  const orderNumber = order.order_number || order.orderNumber;
+  const customerName = order.customer_name || order.customerName;
+  const orderTotal = order.total || 0;
+  
   const statusMessages: Record<string, { title: string; message: string; color: string }> = {
     confirmed: {
       title: "Order Confirmed! ✓",
@@ -212,7 +217,7 @@ function getStatusUpdateEmail(order: any, newStatus: string) {
   };
 
   return {
-    subject: `${status.title} - Order ${order.order_number} | M&M Factory Pizza`,
+    subject: `${status.title} - Order ${orderNumber} | M&M Factory Pizza`,
     html: `
       <!DOCTYPE html>
       <html>
@@ -237,7 +242,7 @@ function getStatusUpdateEmail(order: any, newStatus: string) {
           <!-- Content -->
           <div style="padding: 30px;">
             <p style="font-size: 16px; color: #333; margin-bottom: 20px;">
-              Hi <strong>${order.customer_name}</strong>,
+              Hi <strong>${customerName}</strong>,
             </p>
             <p style="font-size: 16px; color: #333; margin-bottom: 25px;">
               ${status.message}
@@ -247,12 +252,12 @@ function getStatusUpdateEmail(order: any, newStatus: string) {
             <div style="background-color: #f8f9fa; border-radius: 12px; padding: 20px; margin-bottom: 25px;">
               <div style="margin-bottom: 10px;">
                 <span style="color: #666;">Order Number:</span>
-                <strong style="color: #1a1a1a; margin-left: 10px;">${order.order_number}</strong>
+                <strong style="color: #1a1a1a; margin-left: 10px;">${orderNumber}</strong>
               </div>
-              <div>
+              ${orderTotal > 0 ? `<div>
                 <span style="color: #666;">Total:</span>
-                <strong style="color: #8B9A46; margin-left: 10px; font-size: 18px;">€${order.total.toFixed(2)}</strong>
-              </div>
+                <strong style="color: #8B9A46; margin-left: 10px; font-size: 18px;">€${orderTotal.toFixed(2)}</strong>
+              </div>` : ''}
             </div>
             
             ${newStatus === 'ready' ? `
