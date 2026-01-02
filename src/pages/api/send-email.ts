@@ -1,50 +1,123 @@
-// Email notification API endpoint using Brevo
-export const prerender = false;
+import type { APIRoute } from "astro";
 
-import type { APIRoute } from 'astro';
-import * as brevo from '@getbrevo/brevo';
-
-// Initialize Brevo API
-const apiInstance = new brevo.TransactionalEmailsApi();
-apiInstance.setApiKey(brevo.TransactionalEmailsApiApiKeys.apiKey, import.meta.env.BREVO_API_KEY);
-
-// Restaurant details
-const RESTAURANT = {
-  name: "M&M Factory Pizza",
-  address: "Plaça Major, 3, 07460 Pollença",
-  phone: "+34 871 531 423",
-  email: "orders@mmfactorypizza.com",
-};
-
-// Admin email for new order notifications
+// Admin email for order notifications
 const ADMIN_EMAIL = "akash@trustseo.co";
 
-// Email templates
-function getOrderPlacedEmail(order: any) {
-  const isPaid = order.paymentStatus === 'paid';
-  const orderDate = new Date().toLocaleDateString('en-GB', { 
-    day: '2-digit', 
-    month: 'long', 
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-  
-  const itemsList = order.items.map((item: any) => 
-    `<tr>
-      <td style="padding: 12px; border-bottom: 1px solid #eee;">
-        <strong>${item.quantity}× ${item.menuItemName}</strong>
-        ${item.extras && item.extras.length > 0 ? `<br><span style="color: #666; font-size: 13px;">+ ${item.extras.map((e: any) => e.extraName).join(', ')}</span>` : ''}
-        ${item.specialInstructions ? `<br><span style="color: #f59e0b; font-size: 13px;">📝 ${item.specialInstructions}</span>` : ''}
-      </td>
-      <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right;">€${item.itemTotal.toFixed(2)}</td>
-    </tr>`
-  ).join('');
+// Brevo API endpoint
+const BREVO_API_URL = "https://api.brevo.com/v3/smtp/email";
+
+interface OrderItem {
+  name: string;
+  price: number;
+  quantity: number;
+  selectedSize?: {
+    name: string;
+    price: number;
+  };
+  selectedToppings?: Array<{
+    name: string;
+    price: number;
+  }>;
+  specialInstructions?: string;
+}
+
+interface EmailRequest {
+  to: string;
+  type: "order_placed" | "status_update" | "admin_new_order";
+  orderNumber: string;
+  customerName: string;
+  items?: OrderItem[];
+  total?: number;
+  status?: string;
+  paymentMethod?: string;
+  pickupTime?: string;
+  phone?: string;
+  specialInstructions?: string;
+}
+
+// Send email via Brevo REST API
+async function sendBrevoEmail(
+  to: string,
+  subject: string,
+  htmlContent: string
+): Promise<{ success: boolean; error?: string }> {
+  const apiKey = import.meta.env.BREVO_API_KEY;
+
+  if (!apiKey) {
+    console.error("BREVO_API_KEY is not configured");
+    return { success: false, error: "Email service not configured" };
+  }
+
+  try {
+    const response = await fetch(BREVO_API_URL, {
+      method: "POST",
+      headers: {
+        accept: "application/json",
+        "api-key": apiKey,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        sender: { name: "M&M Factory Pizza", email: "noreply@mmfactorypizza.com" },
+        to: [{ email: to }],
+        subject: subject,
+        htmlContent: htmlContent,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error("Brevo API error:", response.status, errorData);
+      return { success: false, error: `Brevo API error: ${response.status}` };
+    }
+
+    const result = await response.json();
+    console.log("Brevo email sent successfully:", result);
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to send email via Brevo:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}
+
+// Email template for order placed (customer)
+function getOrderPlacedEmail(data: EmailRequest): { subject: string; html: string } {
+  const itemsHtml =
+    data.items
+      ?.map((item) => {
+        let itemDetails = `<strong>${item.name}</strong>`;
+        if (item.selectedSize) {
+          itemDetails += ` - ${item.selectedSize.name}`;
+        }
+        if (item.selectedToppings && item.selectedToppings.length > 0) {
+          itemDetails += `<br><small style="color: #666;">Toppings: ${item.selectedToppings.map((t) => t.name).join(", ")}</small>`;
+        }
+        if (item.specialInstructions) {
+          itemDetails += `<br><small style="color: #666;">Note: ${item.specialInstructions}</small>`;
+        }
+        const itemTotal =
+          (item.selectedSize?.price || item.price) * item.quantity +
+          (item.selectedToppings?.reduce((sum, t) => sum + t.price, 0) || 0) *
+            item.quantity;
+        return `
+        <tr>
+          <td style="padding: 12px; border-bottom: 1px solid #eee;">${itemDetails}</td>
+          <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
+          <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right;">$${itemTotal.toFixed(2)}</td>
+        </tr>
+      `;
+      })
+      .join("") || "";
+
+  const paymentStatus =
+    data.paymentMethod === "stripe"
+      ? '<span style="color: #22c55e; font-weight: bold;">✓ PAID</span>'
+      : '<span style="color: #f59e0b; font-weight: bold;">Pay at Pickup</span>';
 
   return {
-    subject: isPaid 
-      ? `Payment Confirmed & Receipt - ${order.orderNumber} | M&M Factory Pizza`
-      : `Order Confirmed - ${order.orderNumber} | M&M Factory Pizza`,
+    subject: `Order Confirmed #${data.orderNumber} - M&M Factory Pizza`,
     html: `
       <!DOCTYPE html>
       <html>
@@ -52,174 +125,132 @@ function getOrderPlacedEmail(order: any) {
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
       </head>
-      <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f5f5;">
-        <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
-          <!-- Header -->
-          <div style="background-color: #1a1a1a; padding: 30px; text-align: center;">
-            <h1 style="margin: 0; color: #ffffff; font-size: 28px;">
-              <span style="color: #8B9A46;">M</span>&<span style="color: #dc2626;">M</span> Factory Pizza
-            </h1>
-            ${isPaid ? '<p style="margin: 10px 0 0 0; color: #999; font-size: 12px; text-transform: uppercase; letter-spacing: 2px;">Payment Receipt</p>' : ''}
-          </div>
+      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+        
+        <!-- Header -->
+        <div style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); padding: 30px; text-align: center; border-radius: 12px 12px 0 0;">
+          <h1 style="color: white; margin: 0; font-size: 28px;">🍕 M&M Factory Pizza</h1>
+          <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 16px;">Order Confirmation</p>
+        </div>
+
+        <!-- Order Box -->
+        <div style="background: #fff; border: 1px solid #e5e7eb; border-top: none; padding: 30px; border-radius: 0 0 12px 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
           
-          <!-- Success Banner -->
-          <div style="background-color: ${isPaid ? '#10b981' : '#f59e0b'}; padding: 20px; text-align: center;">
-            <h2 style="margin: 0; color: #ffffff; font-size: 22px;">
-              ${isPaid ? '✓ Payment Successful!' : '📋 Order Confirmed'}
-            </h2>
-            ${isPaid ? '<p style="margin: 8px 0 0 0; color: rgba(255,255,255,0.9); font-size: 14px;">Your payment has been processed securely</p>' : '<p style="margin: 8px 0 0 0; color: rgba(255,255,255,0.9); font-size: 14px;">Payment due at pickup</p>'}
+          <!-- Thank You Message -->
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h2 style="color: #22c55e; margin: 0 0 10px 0;">✓ Order Received!</h2>
+            <p style="color: #666; margin: 0;">Thank you for your order, ${data.customerName}!</p>
           </div>
-          
-          <!-- Content -->
-          <div style="padding: 30px;">
-            <p style="font-size: 16px; color: #333; margin-bottom: 20px;">
-              Hi <strong>${order.customerName}</strong>,
-            </p>
-            <p style="font-size: 16px; color: #333; margin-bottom: 25px;">
-              ${isPaid 
-                ? 'Thank you for your payment! Your order is confirmed and we\'ll start preparing it right away.' 
-                : 'Thank you for your order! Please remember to pay €' + order.total.toFixed(2) + ' when you pick up.'}
-            </p>
-            
-            <!-- Invoice/Receipt Header -->
-            <div style="background-color: ${isPaid ? '#ecfdf5' : '#fef3c7'}; border: 2px solid ${isPaid ? '#10b981' : '#f59e0b'}; border-radius: 12px; padding: 20px; margin-bottom: 25px;">
-              <table style="width: 100%;">
-                <tr>
-                  <td style="padding: 5px 0;">
-                    <span style="color: #666; font-size: 13px;">Order Number</span><br>
-                    <strong style="color: #1a1a1a; font-size: 20px;">${order.orderNumber}</strong>
-                  </td>
-                  <td style="padding: 5px 0; text-align: right;">
-                    <span style="color: #666; font-size: 13px;">Date</span><br>
-                    <strong style="color: #1a1a1a; font-size: 14px;">${orderDate}</strong>
-                  </td>
-                </tr>
-                <tr>
-                  <td colspan="2" style="padding-top: 15px;">
-                    <span style="color: #666; font-size: 13px;">Payment Status</span><br>
-                    <strong style="color: ${isPaid ? '#059669' : '#d97706'}; font-size: 16px;">
-                      ${isPaid ? '✓ PAID - Card Payment' : '⏳ PENDING - Pay at Pickup'}
-                    </strong>
-                  </td>
-                </tr>
-              </table>
-            </div>
-            
-            <!-- Order Items / Invoice Lines -->
-            <h3 style="color: #1a1a1a; font-size: 16px; margin-bottom: 15px; border-bottom: 2px solid #8B9A46; padding-bottom: 10px;">
-              ${isPaid ? '📄 Invoice Details' : '📋 Order Details'}
-            </h3>
-            <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+
+          <!-- Order Details Card -->
+          <div style="background: #f9fafb; border-radius: 8px; padding: 20px; margin-bottom: 25px;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; color: #666;">Order Number:</td>
+                <td style="padding: 8px 0; text-align: right; font-weight: bold; font-size: 18px; color: #dc2626;">#${data.orderNumber}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #666;">Payment Status:</td>
+                <td style="padding: 8px 0; text-align: right;">${paymentStatus}</td>
+              </tr>
+              ${
+                data.pickupTime
+                  ? `
+              <tr>
+                <td style="padding: 8px 0; color: #666;">Pickup Time:</td>
+                <td style="padding: 8px 0; text-align: right; font-weight: bold;">${data.pickupTime}</td>
+              </tr>
+              `
+                  : ""
+              }
+            </table>
+          </div>
+
+          <!-- Invoice Style Items Table -->
+          <div style="margin-bottom: 25px;">
+            <h3 style="color: #333; margin: 0 0 15px 0; padding-bottom: 10px; border-bottom: 2px solid #dc2626;">Order Items</h3>
+            <table style="width: 100%; border-collapse: collapse;">
               <thead>
-                <tr style="background-color: #f8f9fa;">
-                  <th style="padding: 10px 12px; text-align: left; font-size: 13px; color: #666; border-bottom: 2px solid #ddd;">Item</th>
-                  <th style="padding: 10px 12px; text-align: right; font-size: 13px; color: #666; border-bottom: 2px solid #ddd;">Amount</th>
+                <tr style="background: #f3f4f6;">
+                  <th style="padding: 12px; text-align: left; font-weight: 600; color: #374151;">Item</th>
+                  <th style="padding: 12px; text-align: center; font-weight: 600; color: #374151;">Qty</th>
+                  <th style="padding: 12px; text-align: right; font-weight: 600; color: #374151;">Price</th>
                 </tr>
               </thead>
               <tbody>
-                ${itemsList}
+                ${itemsHtml}
               </tbody>
               <tfoot>
-                <tr>
-                  <td style="padding: 10px 12px; color: #666; font-size: 14px;">Subtotal</td>
-                  <td style="padding: 10px 12px; text-align: right; font-size: 14px;">€${order.subtotal.toFixed(2)}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 10px 12px; color: #666; font-size: 14px;">VAT (21%)</td>
-                  <td style="padding: 10px 12px; text-align: right; font-size: 14px;">€${order.tax.toFixed(2)}</td>
-                </tr>
-                <tr style="background-color: ${isPaid ? '#ecfdf5' : '#fef3c7'};">
-                  <td style="padding: 15px 12px; font-weight: bold; font-size: 18px;">
-                    ${isPaid ? 'Total Paid' : 'Amount Due'}
-                  </td>
-                  <td style="padding: 15px 12px; text-align: right; font-weight: bold; font-size: 20px; color: ${isPaid ? '#059669' : '#d97706'};">€${order.total.toFixed(2)}</td>
+                <tr style="background: #f9fafb;">
+                  <td colspan="2" style="padding: 15px 12px; text-align: right; font-weight: bold; font-size: 16px;">Total:</td>
+                  <td style="padding: 15px 12px; text-align: right; font-weight: bold; font-size: 20px; color: #dc2626;">$${data.total?.toFixed(2) || "0.00"}</td>
                 </tr>
               </tfoot>
             </table>
-            
-            <!-- Pickup Info -->
-            <div style="background-color: #8B9A46; border-radius: 12px; padding: 20px; color: #ffffff; margin-bottom: 25px;">
-              <h3 style="margin: 0 0 15px 0; font-size: 18px;">📍 Pickup Location</h3>
-              <p style="margin: 0 0 5px 0; font-size: 16px;"><strong>${RESTAURANT.address}</strong></p>
-              <p style="margin: 0; font-size: 14px; opacity: 0.9;">
-                You'll receive an email when your order is ready!
-              </p>
-            </div>
-            
-            ${isPaid ? `
-            <!-- Payment Confirmation Box -->
-            <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 15px; margin-bottom: 20px; font-size: 13px; color: #166534;">
-              <strong>💳 Payment processed securely via Stripe</strong><br>
-              This email serves as your receipt. No payment needed at pickup.
-            </div>
-            ` : `
-            <!-- Payment Reminder -->
-            <div style="background-color: #fef9c3; border: 1px solid #fde047; border-radius: 8px; padding: 15px; margin-bottom: 20px; font-size: 13px; color: #854d0e;">
-              <strong>💵 Please bring payment</strong><br>
-              Amount due at pickup: <strong>€${order.total.toFixed(2)}</strong> (Cash or Card accepted)
-            </div>
-            `}
-            
-            <!-- Contact -->
-            <p style="font-size: 14px; color: #666; text-align: center;">
-              Questions? Call us at <a href="tel:${RESTAURANT.phone}" style="color: #8B9A46;">${RESTAURANT.phone}</a>
+          </div>
+
+          ${
+            data.specialInstructions
+              ? `
+          <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; border-radius: 4px; margin-bottom: 25px;">
+            <strong style="color: #92400e;">📝 Special Instructions:</strong>
+            <p style="margin: 5px 0 0 0; color: #78350f;">${data.specialInstructions}</p>
+          </div>
+          `
+              : ""
+          }
+
+          <!-- Pickup Location -->
+          <div style="background: #fef2f2; border-radius: 8px; padding: 20px; margin-bottom: 25px;">
+            <h3 style="color: #dc2626; margin: 0 0 10px 0;">📍 Pickup Location</h3>
+            <p style="margin: 0; color: #666;">
+              <strong>M&M Factory Pizza</strong><br>
+              123 Pizza Street, Downtown<br>
+              Your City, State 12345
             </p>
           </div>
-          
+
           <!-- Footer -->
-          <div style="background-color: #1a1a1a; padding: 20px; text-align: center;">
-            <p style="margin: 0 0 5px 0; color: #fff; font-size: 14px; font-weight: bold;">M&M Factory Pizza</p>
-            <p style="margin: 0; color: #999; font-size: 12px;">
-              ${RESTAURANT.address} | ${RESTAURANT.phone}
-            </p>
-            <p style="margin: 10px 0 0 0; color: #666; font-size: 11px;">
-              © ${new Date().getFullYear()} M&M Factory Pizza. All rights reserved.
-            </p>
+          <div style="text-align: center; padding-top: 20px; border-top: 1px solid #eee;">
+            <p style="color: #666; margin: 0 0 10px 0;">Questions? Call us at <strong>(555) 123-4567</strong></p>
+            <p style="color: #999; font-size: 12px; margin: 0;">Thank you for choosing M&M Factory Pizza!</p>
           </div>
         </div>
       </body>
       </html>
-    `
+    `,
   };
 }
 
-function getStatusUpdateEmail(order: any, newStatus: string) {
-  // Handle both field name formats (snake_case from DB, camelCase from frontend)
-  const orderNumber = order.order_number || order.orderNumber;
-  const customerName = order.customer_name || order.customerName;
-  const orderTotal = order.total || 0;
-  
-  const statusMessages: Record<string, { title: string; message: string; color: string }> = {
-    confirmed: {
-      title: "Order Confirmed! ✓",
-      message: "Great news! Your order has been confirmed and we'll start preparing it soon.",
-      color: "#3b82f6"
-    },
-    preparing: {
-      title: "We're Preparing Your Order! 👨‍🍳",
-      message: "Our chefs are now preparing your delicious order. It won't be long!",
-      color: "#f97316"
-    },
-    ready: {
-      title: "Your Order is Ready! 🎉",
-      message: "Your order is ready for pickup! Head over to our restaurant to collect it.",
-      color: "#10b981"
-    },
-    completed: {
-      title: "Thank You! 🙏",
-      message: "We hope you enjoyed your meal! Thank you for choosing M&M Factory Pizza.",
-      color: "#8B9A46"
-    }
+// Email template for status update (customer)
+function getStatusUpdateEmail(data: EmailRequest): { subject: string; html: string } {
+  const statusEmoji: Record<string, string> = {
+    pending: "🕐",
+    confirmed: "✅",
+    preparing: "👨‍🍳",
+    ready: "🔔",
+    completed: "🎉",
+    cancelled: "❌",
   };
 
-  const status = statusMessages[newStatus] || {
-    title: "Order Update",
-    message: `Your order status has been updated to: ${newStatus}`,
-    color: "#666"
+  const statusMessage: Record<string, string> = {
+    pending: "Your order is being reviewed",
+    confirmed: "Your order has been confirmed and will be prepared soon",
+    preparing: "Our chefs are preparing your delicious pizza!",
+    ready: "Your order is ready for pickup!",
+    completed: "Your order has been completed. Thank you!",
+    cancelled: "Your order has been cancelled",
   };
+
+  const status = data.status || "pending";
+  const emoji = statusEmoji[status] || "📋";
+  const message = statusMessage[status] || "Your order status has been updated";
+
+  const isReady = status === "ready";
+  const isCancelled = status === "cancelled";
 
   return {
-    subject: `${status.title} - Order ${orderNumber} | M&M Factory Pizza`,
+    subject: `${emoji} Order #${data.orderNumber} - ${status.charAt(0).toUpperCase() + status.slice(1)}`,
     html: `
       <!DOCTYPE html>
       <html>
@@ -227,263 +258,304 @@ function getStatusUpdateEmail(order: any, newStatus: string) {
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
       </head>
-      <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f5f5;">
-        <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
-          <!-- Header -->
-          <div style="background-color: #1a1a1a; padding: 30px; text-align: center;">
-            <h1 style="margin: 0; color: #ffffff; font-size: 28px;">
-              <span style="color: #8B9A46;">M</span>&<span style="color: #dc2626;">M</span> Factory Pizza
-            </h1>
-          </div>
+      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+        
+        <!-- Header -->
+        <div style="background: linear-gradient(135deg, ${isCancelled ? "#6b7280" : isReady ? "#22c55e" : "#dc2626"} 0%, ${isCancelled ? "#4b5563" : isReady ? "#16a34a" : "#b91c1c"} 100%); padding: 30px; text-align: center; border-radius: 12px 12px 0 0;">
+          <h1 style="color: white; margin: 0; font-size: 28px;">🍕 M&M Factory Pizza</h1>
+          <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 16px;">Order Update</p>
+        </div>
+
+        <!-- Content -->
+        <div style="background: #fff; border: 1px solid #e5e7eb; border-top: none; padding: 30px; border-radius: 0 0 12px 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
           
-          <!-- Status Banner -->
-          <div style="background-color: ${status.color}; padding: 25px; text-align: center;">
-            <h2 style="margin: 0; color: #ffffff; font-size: 24px;">${status.title}</h2>
+          <!-- Status Badge -->
+          <div style="text-align: center; margin-bottom: 30px;">
+            <div style="font-size: 60px; margin-bottom: 15px;">${emoji}</div>
+            <h2 style="color: ${isCancelled ? "#6b7280" : isReady ? "#22c55e" : "#dc2626"}; margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 1px;">${status}</h2>
+            <p style="color: #666; margin: 0; font-size: 18px;">${message}</p>
           </div>
-          
-          <!-- Content -->
-          <div style="padding: 30px;">
-            <p style="font-size: 16px; color: #333; margin-bottom: 20px;">
-              Hi <strong>${customerName}</strong>,
+
+          <!-- Order Info -->
+          <div style="background: #f9fafb; border-radius: 8px; padding: 20px; margin-bottom: 25px;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; color: #666;">Order Number:</td>
+                <td style="padding: 8px 0; text-align: right; font-weight: bold; font-size: 18px; color: #dc2626;">#${data.orderNumber}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #666;">Customer:</td>
+                <td style="padding: 8px 0; text-align: right; font-weight: bold;">${data.customerName}</td>
+              </tr>
+              ${
+                data.total
+                  ? `
+              <tr>
+                <td style="padding: 8px 0; color: #666;">Total:</td>
+                <td style="padding: 8px 0; text-align: right; font-weight: bold;">$${data.total.toFixed(2)}</td>
+              </tr>
+              `
+                  : ""
+              }
+            </table>
+          </div>
+
+          ${
+            isReady
+              ? `
+          <!-- Ready for Pickup Alert -->
+          <div style="background: #dcfce7; border: 2px solid #22c55e; border-radius: 8px; padding: 20px; margin-bottom: 25px; text-align: center;">
+            <h3 style="color: #166534; margin: 0 0 10px 0;">🎉 Your order is ready!</h3>
+            <p style="color: #15803d; margin: 0; font-size: 16px;">Please come to pick up your delicious pizza!</p>
+          </div>
+
+          <!-- Pickup Location -->
+          <div style="background: #fef2f2; border-radius: 8px; padding: 20px; margin-bottom: 25px;">
+            <h3 style="color: #dc2626; margin: 0 0 10px 0;">📍 Pickup Location</h3>
+            <p style="margin: 0; color: #666;">
+              <strong>M&M Factory Pizza</strong><br>
+              123 Pizza Street, Downtown<br>
+              Your City, State 12345
             </p>
-            <p style="font-size: 16px; color: #333; margin-bottom: 25px;">
-              ${status.message}
-            </p>
-            
-            <!-- Order Info -->
-            <div style="background-color: #f8f9fa; border-radius: 12px; padding: 20px; margin-bottom: 25px;">
-              <div style="margin-bottom: 10px;">
-                <span style="color: #666;">Order Number:</span>
-                <strong style="color: #1a1a1a; margin-left: 10px;">${orderNumber}</strong>
+          </div>
+          `
+              : ""
+          }
+
+          <!-- Status Progress -->
+          <div style="margin-bottom: 25px;">
+            <h4 style="color: #666; margin: 0 0 15px 0; text-align: center;">Order Progress</h4>
+            <div style="display: flex; justify-content: space-between; position: relative;">
+              <div style="flex: 1; text-align: center;">
+                <div style="width: 30px; height: 30px; border-radius: 50%; background: ${["pending", "confirmed", "preparing", "ready", "completed"].includes(status) && !isCancelled ? "#22c55e" : "#e5e7eb"}; margin: 0 auto 5px; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px;">✓</div>
+                <span style="font-size: 10px; color: #666;">Received</span>
               </div>
-              ${orderTotal > 0 ? `<div>
-                <span style="color: #666;">Total:</span>
-                <strong style="color: #8B9A46; margin-left: 10px; font-size: 18px;">€${orderTotal.toFixed(2)}</strong>
-              </div>` : ''}
+              <div style="flex: 1; text-align: center;">
+                <div style="width: 30px; height: 30px; border-radius: 50%; background: ${["confirmed", "preparing", "ready", "completed"].includes(status) && !isCancelled ? "#22c55e" : "#e5e7eb"}; margin: 0 auto 5px; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px;">✓</div>
+                <span style="font-size: 10px; color: #666;">Confirmed</span>
+              </div>
+              <div style="flex: 1; text-align: center;">
+                <div style="width: 30px; height: 30px; border-radius: 50%; background: ${["preparing", "ready", "completed"].includes(status) && !isCancelled ? "#22c55e" : "#e5e7eb"}; margin: 0 auto 5px; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px;">✓</div>
+                <span style="font-size: 10px; color: #666;">Preparing</span>
+              </div>
+              <div style="flex: 1; text-align: center;">
+                <div style="width: 30px; height: 30px; border-radius: 50%; background: ${["ready", "completed"].includes(status) && !isCancelled ? "#22c55e" : "#e5e7eb"}; margin: 0 auto 5px; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px;">✓</div>
+                <span style="font-size: 10px; color: #666;">Ready</span>
+              </div>
             </div>
-            
-            ${newStatus === 'ready' ? `
-            <!-- Pickup Reminder -->
-            <div style="background-color: #10b981; border-radius: 12px; padding: 20px; color: #ffffff; margin-bottom: 25px; text-align: center;">
-              <h3 style="margin: 0 0 10px 0; font-size: 20px;">🏃 Come Pick Up Your Order!</h3>
-              <p style="margin: 0; font-size: 16px;"><strong>${RESTAURANT.address}</strong></p>
-            </div>
-            ` : ''}
-            
-            <!-- Contact -->
-            <p style="font-size: 14px; color: #666; text-align: center;">
-              Questions? Call us at <a href="tel:${RESTAURANT.phone}" style="color: #8B9A46;">${RESTAURANT.phone}</a>
-            </p>
           </div>
-          
+
           <!-- Footer -->
-          <div style="background-color: #1a1a1a; padding: 20px; text-align: center;">
-            <p style="margin: 0; color: #999; font-size: 13px;">
-              © ${new Date().getFullYear()} M&M Factory Pizza | ${RESTAURANT.address}
-            </p>
+          <div style="text-align: center; padding-top: 20px; border-top: 1px solid #eee;">
+            <p style="color: #666; margin: 0 0 10px 0;">Questions? Call us at <strong>(555) 123-4567</strong></p>
+            <p style="color: #999; font-size: 12px; margin: 0;">Thank you for choosing M&M Factory Pizza!</p>
           </div>
         </div>
       </body>
       </html>
-    `
+    `,
   };
 }
 
-// Admin notification email for new orders
-function getAdminNewOrderEmail(order: any) {
-  const isPaid = order.paymentStatus === 'paid';
-  const orderDate = new Date().toLocaleDateString('en-GB', { 
-    day: '2-digit', 
-    month: 'short', 
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-  
-  const itemsList = order.items.map((item: any) => 
-    `<tr>
-      <td style="padding: 10px; border-bottom: 1px solid #eee;">
-        <strong>${item.quantity}× ${item.menuItemName}</strong>
-        ${item.extras && item.extras.length > 0 ? `<br><span style="color: #666; font-size: 13px;">+ ${item.extras.map((e: any) => e.extraName).join(', ')}</span>` : ''}
-        ${item.specialInstructions ? `<br><span style="color: #f59e0b; font-size: 13px;">📝 ${item.specialInstructions}</span>` : ''}
-      </td>
-      <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">€${item.itemTotal.toFixed(2)}</td>
-    </tr>`
-  ).join('');
+// Email template for admin notification
+function getAdminNewOrderEmail(data: EmailRequest): { subject: string; html: string } {
+  const itemsHtml =
+    data.items
+      ?.map((item) => {
+        let itemDetails = `<strong>${item.name}</strong>`;
+        if (item.selectedSize) {
+          itemDetails += ` - ${item.selectedSize.name}`;
+        }
+        if (item.selectedToppings && item.selectedToppings.length > 0) {
+          itemDetails += `<br><small>Toppings: ${item.selectedToppings.map((t) => t.name).join(", ")}</small>`;
+        }
+        if (item.specialInstructions) {
+          itemDetails += `<br><small>Note: ${item.specialInstructions}</small>`;
+        }
+        return `
+        <tr>
+          <td style="padding: 10px; border-bottom: 1px solid #eee;">${itemDetails}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
+        </tr>
+      `;
+      })
+      .join("") || "";
+
+  const paymentBadge =
+    data.paymentMethod === "stripe"
+      ? '<span style="background: #22c55e; color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold;">💳 PAID ONLINE</span>'
+      : '<span style="background: #f59e0b; color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold;">💵 PAY AT PICKUP</span>';
 
   return {
-    subject: `🍕 NEW ORDER ${isPaid ? '💳 PAID' : '💵 PAY@PICKUP'} - #${order.orderNumber} - €${order.total.toFixed(2)}`,
+    subject: `🚨 NEW ORDER #${data.orderNumber} - $${data.total?.toFixed(2)} - ${data.paymentMethod === "stripe" ? "PAID" : "Pay at Pickup"}`,
     html: `
       <!DOCTYPE html>
       <html>
-      <head><meta charset="utf-8"></head>
-      <body style="margin: 0; padding: 20px; font-family: Arial, sans-serif; background-color: #f5f5f5;">
-        <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-          <!-- Header -->
-          <div style="background-color: ${isPaid ? '#059669' : '#dc2626'}; padding: 20px; text-align: center;">
-            <h1 style="margin: 0; color: #ffffff; font-size: 24px;">🍕 NEW ORDER!</h1>
-            <p style="margin: 8px 0 0 0; color: rgba(255,255,255,0.9); font-size: 14px;">${orderDate}</p>
-          </div>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      </head>
+      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+        
+        <!-- Alert Header -->
+        <div style="background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%); padding: 25px; text-align: center; border-radius: 12px 12px 0 0;">
+          <h1 style="color: white; margin: 0; font-size: 24px;">🚨 NEW ORDER RECEIVED!</h1>
+          <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0;">Order #${data.orderNumber}</p>
+        </div>
+
+        <!-- Content -->
+        <div style="background: #fff; border: 1px solid #e5e7eb; border-top: none; padding: 25px; border-radius: 0 0 12px 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
           
-          <!-- Payment Status Banner -->
-          <div style="background-color: ${isPaid ? '#ecfdf5' : '#fef3c7'}; border-bottom: 3px solid ${isPaid ? '#10b981' : '#f59e0b'}; padding: 15px; text-align: center;">
-            <span style="font-size: 20px; font-weight: bold; color: ${isPaid ? '#059669' : '#d97706'};">
-              ${isPaid ? '💳 PAYMENT RECEIVED' : '💵 PAYMENT DUE AT PICKUP'}
-            </span>
+          <!-- Payment Status -->
+          <div style="text-align: center; margin-bottom: 25px;">
+            ${paymentBadge}
           </div>
-          
-          <!-- Order Info -->
-          <div style="padding: 25px;">
-            <!-- Order Summary Box -->
-            <div style="background-color: #f8f9fa; border: 2px solid #e5e7eb; border-radius: 10px; padding: 20px; margin-bottom: 20px;">
-              <table style="width: 100%;">
-                <tr>
-                  <td style="padding: 5px 0;">
-                    <span style="color: #666; font-size: 13px;">Order Number</span><br>
-                    <strong style="font-size: 22px; color: #1a1a1a;">#${order.orderNumber}</strong>
-                  </td>
-                  <td style="padding: 5px 0; text-align: right;">
-                    <span style="color: #666; font-size: 13px;">Order Total</span><br>
-                    <strong style="font-size: 26px; color: ${isPaid ? '#059669' : '#d97706'};">€${order.total.toFixed(2)}</strong>
-                  </td>
-                </tr>
-              </table>
-            </div>
-            
-            <!-- Payment Details -->
-            <div style="background-color: ${isPaid ? '#f0fdf4' : '#fefce8'}; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
-              <h3 style="margin: 0 0 10px 0; font-size: 14px; color: #666;">💰 PAYMENT INFORMATION</h3>
-              <table style="width: 100%;">
-                <tr>
-                  <td style="padding: 3px 0; color: #333;"><strong>Status:</strong></td>
-                  <td style="padding: 3px 0; text-align: right;">
-                    <span style="background-color: ${isPaid ? '#dcfce7' : '#fef08a'}; color: ${isPaid ? '#166534' : '#854d0e'}; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: bold;">
-                      ${isPaid ? '✓ PAID' : '⏳ PENDING'}
-                    </span>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding: 3px 0; color: #333;"><strong>Method:</strong></td>
-                  <td style="padding: 3px 0; text-align: right; color: #333;">${isPaid ? 'Card (Stripe)' : 'Cash/Card at Pickup'}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 3px 0; color: #333;"><strong>Amount:</strong></td>
-                  <td style="padding: 3px 0; text-align: right; color: #333; font-weight: bold;">€${order.total.toFixed(2)}</td>
-                </tr>
-              </table>
-              ${!isPaid ? `<p style="margin: 10px 0 0 0; padding: 10px; background-color: #fef08a; border-radius: 6px; font-size: 13px; color: #854d0e;">
-                <strong>⚠️ Remember:</strong> Collect €${order.total.toFixed(2)} from customer at pickup
-              </p>` : ''}
-            </div>
-            
-            <!-- Customer Info -->
-            <h3 style="margin: 0 0 10px 0; color: #333; border-bottom: 2px solid #8B9A46; padding-bottom: 8px;">👤 Customer Details</h3>
-            <table style="width: 100%; margin-bottom: 20px;">
+
+          <!-- Customer Details -->
+          <div style="background: #f3f4f6; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+            <h3 style="color: #374151; margin: 0 0 15px 0; font-size: 16px;">👤 Customer Details</h3>
+            <table style="width: 100%;">
               <tr>
-                <td style="padding: 5px 0; color: #666; width: 80px;">Name:</td>
-                <td style="padding: 5px 0; color: #333;"><strong>${order.customerName}</strong></td>
-              </tr>
-              <tr>
-                <td style="padding: 5px 0; color: #666;">Phone:</td>
-                <td style="padding: 5px 0;"><a href="tel:${order.customerPhone}" style="color: #2563eb; text-decoration: none; font-weight: bold;">${order.customerPhone}</a></td>
+                <td style="padding: 5px 0; color: #666; width: 100px;">Name:</td>
+                <td style="padding: 5px 0; font-weight: bold;">${data.customerName}</td>
               </tr>
               <tr>
                 <td style="padding: 5px 0; color: #666;">Email:</td>
-                <td style="padding: 5px 0;"><a href="mailto:${order.customerEmail}" style="color: #2563eb; text-decoration: none;">${order.customerEmail}</a></td>
+                <td style="padding: 5px 0;">${data.to}</td>
               </tr>
+              ${
+                data.phone
+                  ? `
+              <tr>
+                <td style="padding: 5px 0; color: #666;">Phone:</td>
+                <td style="padding: 5px 0; font-weight: bold;">${data.phone}</td>
+              </tr>
+              `
+                  : ""
+              }
+              ${
+                data.pickupTime
+                  ? `
+              <tr>
+                <td style="padding: 5px 0; color: #666;">Pickup:</td>
+                <td style="padding: 5px 0; font-weight: bold; color: #dc2626;">${data.pickupTime}</td>
+              </tr>
+              `
+                  : ""
+              }
             </table>
-            
-            <!-- Order Items -->
-            <h3 style="margin: 0 0 10px 0; color: #333; border-bottom: 2px solid #8B9A46; padding-bottom: 8px;">📋 Order Items</h3>
-            <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
-              ${itemsList}
-              <tr style="background-color: #f8f9fa;">
-                <td style="padding: 8px 10px; color: #666; font-size: 14px;">Subtotal</td>
-                <td style="padding: 8px 10px; text-align: right; font-size: 14px;">€${order.subtotal.toFixed(2)}</td>
-              </tr>
-              <tr style="background-color: #f8f9fa;">
-                <td style="padding: 8px 10px; color: #666; font-size: 14px;">VAT (21%)</td>
-                <td style="padding: 8px 10px; text-align: right; font-size: 14px;">€${order.tax.toFixed(2)}</td>
-              </tr>
-              <tr style="background-color: ${isPaid ? '#dcfce7' : '#fef08a'};">
-                <td style="padding: 12px 10px; font-weight: bold; font-size: 16px;">${isPaid ? 'Total Paid' : 'Total Due'}</td>
-                <td style="padding: 12px 10px; text-align: right; font-weight: bold; font-size: 20px; color: ${isPaid ? '#059669' : '#d97706'};">€${order.total.toFixed(2)}</td>
-              </tr>
+          </div>
+
+          <!-- Order Items -->
+          <div style="margin-bottom: 20px;">
+            <h3 style="color: #374151; margin: 0 0 15px 0; font-size: 16px;">🍕 Order Items</h3>
+            <table style="width: 100%; border-collapse: collapse; background: #fff; border: 1px solid #e5e7eb; border-radius: 8px;">
+              <thead>
+                <tr style="background: #f9fafb;">
+                  <th style="padding: 10px; text-align: left; font-size: 12px; text-transform: uppercase; color: #6b7280;">Item</th>
+                  <th style="padding: 10px; text-align: center; font-size: 12px; text-transform: uppercase; color: #6b7280;">Qty</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${itemsHtml}
+              </tbody>
             </table>
-            
-            ${order.notes ? `
-            <div style="background-color: #fef3c7; border-radius: 8px; padding: 12px; margin-bottom: 20px;">
-              <strong>📝 Customer Notes:</strong><br>
-              <span style="color: #92400e;">${order.notes}</span>
-            </div>
-            ` : ''}
-            
-            <!-- Action Button -->
-            <div style="text-align: center; margin-top: 25px;">
-              <a href="https://mm-factory-pizza.vercel.app/admin" style="display: inline-block; background-color: #1a1a1a; color: #ffffff; padding: 14px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">Open Admin Dashboard →</a>
-            </div>
+          </div>
+
+          ${
+            data.specialInstructions
+              ? `
+          <!-- Special Instructions -->
+          <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
+            <strong style="color: #92400e;">📝 Special Instructions:</strong>
+            <p style="margin: 5px 0 0 0; color: #78350f;">${data.specialInstructions}</p>
+          </div>
+          `
+              : ""
+          }
+
+          <!-- Total -->
+          <div style="background: #dc2626; color: white; padding: 20px; border-radius: 8px; text-align: center;">
+            <span style="font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Order Total</span>
+            <div style="font-size: 32px; font-weight: bold; margin-top: 5px;">$${data.total?.toFixed(2) || "0.00"}</div>
+          </div>
+
+          <!-- Action Button -->
+          <div style="text-align: center; margin-top: 25px;">
+            <a href="${import.meta.env.SITE_URL || "https://mm-factory-pizza.vercel.app"}/admin" style="display: inline-block; background: #7c3aed; color: white; padding: 15px 30px; border-radius: 8px; text-decoration: none; font-weight: bold;">View in Admin Dashboard →</a>
           </div>
         </div>
       </body>
       </html>
-    `
+    `,
   };
 }
 
 export const POST: APIRoute = async ({ request }) => {
   try {
-    const body = await request.json();
-    const { type, order, newStatus, customerEmail } = body;
+    const data: EmailRequest = await request.json();
+    console.log("Email request received:", { type: data.type, to: data.to, orderNumber: data.orderNumber });
 
-    if (!customerEmail && type !== 'admin_notification') {
+    // Validate required fields
+    if (!data.to || !data.type || !data.orderNumber || !data.customerName) {
       return new Response(
-        JSON.stringify({ error: 'Customer email is required' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
+        JSON.stringify({
+          success: false,
+          error: "Missing required fields: to, type, orderNumber, customerName",
+        }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
-    let emailContent;
-    let recipientEmail = customerEmail;
-    
-    if (type === 'order_placed') {
-      emailContent = getOrderPlacedEmail(order);
-    } else if (type === 'status_update') {
-      emailContent = getStatusUpdateEmail(order, newStatus);
-    } else if (type === 'admin_notification') {
-      emailContent = getAdminNewOrderEmail(order);
-      recipientEmail = ADMIN_EMAIL;
-    } else {
-      return new Response(
-        JSON.stringify({ error: 'Invalid email type' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      );
+    let emailContent: { subject: string; html: string };
+    let recipientEmail = data.to;
+
+    // Generate email content based on type
+    switch (data.type) {
+      case "order_placed":
+        emailContent = getOrderPlacedEmail(data);
+        break;
+      case "status_update":
+        emailContent = getStatusUpdateEmail(data);
+        break;
+      case "admin_new_order":
+        emailContent = getAdminNewOrderEmail(data);
+        recipientEmail = ADMIN_EMAIL;
+        break;
+      default:
+        return new Response(
+          JSON.stringify({ success: false, error: "Invalid email type" }),
+          { status: 400, headers: { "Content-Type": "application/json" } }
+        );
     }
+
+    console.log(`Sending ${data.type} email to: ${recipientEmail}`);
 
     // Send email via Brevo
-    const sendSmtpEmail = new brevo.SendSmtpEmail();
-    sendSmtpEmail.sender = { name: 'M&M Factory Pizza', email: 'noreply@mm-factory-pizza.vercel.app' };
-    sendSmtpEmail.to = [{ email: recipientEmail }];
-    sendSmtpEmail.subject = emailContent.subject;
-    sendSmtpEmail.htmlContent = emailContent.html;
+    const result = await sendBrevoEmail(recipientEmail, emailContent.subject, emailContent.html);
 
-    try {
-      const result = await apiInstance.sendTransacEmail(sendSmtpEmail);
+    if (!result.success) {
+      console.error("Failed to send email:", result.error);
       return new Response(
-        JSON.stringify({ success: true, messageId: result.body?.messageId }),
-        { status: 200, headers: { 'Content-Type': 'application/json' } }
-      );
-    } catch (emailError: any) {
-      console.error('Brevo error:', emailError?.body || emailError);
-      return new Response(
-        JSON.stringify({ error: emailError?.body?.message || 'Failed to send email' }),
-        { status: 500, headers: { 'Content-Type': 'application/json' } }
+        JSON.stringify({ success: false, error: result.error }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
       );
     }
-  } catch (error: any) {
-    console.error('Email error:', error);
+
+    console.log(`Email sent successfully to ${recipientEmail}`);
+
     return new Response(
-      JSON.stringify({ error: error.message || 'Failed to send email' }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
+      JSON.stringify({ success: true, message: "Email sent successfully" }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
+  } catch (error) {
+    console.error("Email API error:", error);
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
 };
