@@ -123,9 +123,12 @@ export function AdminDashboard() {
             <p className="text-white/60 text-sm">Order Management Dashboard</p>
           </div>
           <div className="flex items-center gap-4">
-            <Button onClick={fetchOrders} variant="outline" size="sm">
+            <button 
+              onClick={fetchOrders}
+              className="px-4 py-2 text-sm font-semibold border border-white/30 text-white rounded-lg hover:bg-white/10 transition-colors"
+            >
               ↻ Refresh
-            </Button>
+            </button>
             <a href="/" className="text-white/80 hover:text-white text-sm">
               ← Back to Site
             </a>
