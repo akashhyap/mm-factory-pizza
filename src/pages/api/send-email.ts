@@ -60,7 +60,7 @@ async function sendBrevoEmail(
         "content-type": "application/json",
       },
       body: JSON.stringify({
-        sender: { name: "M&M Factory Pizza", email: "noreply@mmfactorypizza.com" },
+        sender: { name: "M&M Factory Pizza", email: "akash@trustseo.co" },
         to: [{ email: to }],
         subject: subject,
         htmlContent: htmlContent,
