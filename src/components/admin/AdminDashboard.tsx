@@ -223,6 +223,9 @@ export function AdminDashboard() {
   const updateStatus = async (orderId: string, newStatus: OrderStatus) => {
     setUpdatingOrderId(orderId);
     
+    // Find the order to get customer email
+    const order = orders.find(o => o.id === orderId);
+    
     const { error } = await supabase
       .from('orders')
       .update({ status: newStatus, updated_at: new Date().toISOString() })
@@ -239,6 +242,28 @@ export function AdminDashboard() {
       ));
       if (selectedOrder?.id === orderId) {
         setSelectedOrder(prev => prev ? { ...prev, status: newStatus } : null);
+      }
+      
+      // Send email notification if customer has email
+      if (order?.customer_email && ['confirmed', 'preparing', 'ready', 'completed'].includes(newStatus)) {
+        try {
+          await fetch('/api/send-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              type: 'status_update',
+              customerEmail: order.customer_email,
+              order: {
+                orderNumber: order.order_number,
+                customerName: order.customer_name,
+              },
+              newStatus,
+            }),
+          });
+        } catch (emailError) {
+          console.error('Failed to send status update email:', emailError);
+          // Don't block status update if email fails
+        }
       }
     }
     

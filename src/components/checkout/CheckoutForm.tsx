@@ -183,6 +183,32 @@ export function CheckoutForm() {
         return;
       }
       
+      // Send confirmation email if customer provided email
+      if (formData.email.trim()) {
+        try {
+          await fetch('/api/send-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              type: 'order_placed',
+              customerEmail: formData.email.trim(),
+              order: {
+                orderNumber,
+                customerName: formData.name.trim(),
+                items: orderItems,
+                subtotal,
+                tax,
+                total,
+                paymentStatus: 'pending',
+              }
+            }),
+          });
+        } catch (emailError) {
+          console.error('Failed to send confirmation email:', emailError);
+          // Don't block order completion if email fails
+        }
+      }
+      
       // Success!
       toast.success('Order placed successfully!');
       
