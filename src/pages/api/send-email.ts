@@ -1,10 +1,12 @@
-// Email notification API endpoint using Resend
+// Email notification API endpoint using Brevo
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { Resend } from 'resend';
+import * as brevo from '@getbrevo/brevo';
 
-const resend = new Resend(import.meta.env.RESEND_API_KEY);
+// Initialize Brevo API
+const apiInstance = new brevo.TransactionalEmailsApi();
+apiInstance.setApiKey(brevo.TransactionalEmailsApiApiKeys.apiKey, import.meta.env.BREVO_API_KEY);
 
 // Restaurant details
 const RESTAURANT = {
@@ -457,28 +459,26 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
-    // Send email via Resend
-    // Note: In free tier, you can only send to your own email or use onboarding@resend.dev
-    // For production, you need to verify your domain
-    const { data, error } = await resend.emails.send({
-      from: 'M&M Factory Pizza <onboarding@resend.dev>', // Change after domain verification
-      to: recipientEmail,
-      subject: emailContent.subject,
-      html: emailContent.html,
-    });
+    // Send email via Brevo
+    const sendSmtpEmail = new brevo.SendSmtpEmail();
+    sendSmtpEmail.sender = { name: 'M&M Factory Pizza', email: 'noreply@mm-factory-pizza.vercel.app' };
+    sendSmtpEmail.to = [{ email: recipientEmail }];
+    sendSmtpEmail.subject = emailContent.subject;
+    sendSmtpEmail.htmlContent = emailContent.html;
 
-    if (error) {
-      console.error('Resend error:', error);
+    try {
+      const result = await apiInstance.sendTransacEmail(sendSmtpEmail);
       return new Response(
-        JSON.stringify({ error: error.message }),
+        JSON.stringify({ success: true, messageId: result.body?.messageId }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
+    } catch (emailError: any) {
+      console.error('Brevo error:', emailError?.body || emailError);
+      return new Response(
+        JSON.stringify({ error: emailError?.body?.message || 'Failed to send email' }),
         { status: 500, headers: { 'Content-Type': 'application/json' } }
       );
     }
-
-    return new Response(
-      JSON.stringify({ success: true, messageId: data?.id }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
-    );
   } catch (error: any) {
     console.error('Email error:', error);
     return new Response(
