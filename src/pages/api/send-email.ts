@@ -19,6 +19,15 @@ const ADMIN_EMAIL = "akash@localleads247.com";
 
 // Email templates
 function getOrderPlacedEmail(order: any) {
+  const isPaid = order.paymentStatus === 'paid';
+  const orderDate = new Date().toLocaleDateString('en-GB', { 
+    day: '2-digit', 
+    month: 'long', 
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+  
   const itemsList = order.items.map((item: any) => 
     `<tr>
       <td style="padding: 12px; border-bottom: 1px solid #eee;">
@@ -31,7 +40,9 @@ function getOrderPlacedEmail(order: any) {
   ).join('');
 
   return {
-    subject: `Order Confirmed - ${order.orderNumber} | M&M Factory Pizza`,
+    subject: isPaid 
+      ? `Payment Confirmed & Receipt - ${order.orderNumber} | M&M Factory Pizza`
+      : `Order Confirmed - ${order.orderNumber} | M&M Factory Pizza`,
     html: `
       <!DOCTYPE html>
       <html>
@@ -46,11 +57,15 @@ function getOrderPlacedEmail(order: any) {
             <h1 style="margin: 0; color: #ffffff; font-size: 28px;">
               <span style="color: #8B9A46;">M</span>&<span style="color: #dc2626;">M</span> Factory Pizza
             </h1>
+            ${isPaid ? '<p style="margin: 10px 0 0 0; color: #999; font-size: 12px; text-transform: uppercase; letter-spacing: 2px;">Payment Receipt</p>' : ''}
           </div>
           
           <!-- Success Banner -->
-          <div style="background-color: #10b981; padding: 20px; text-align: center;">
-            <h2 style="margin: 0; color: #ffffff; font-size: 22px;">✓ Order Confirmed!</h2>
+          <div style="background-color: ${isPaid ? '#10b981' : '#f59e0b'}; padding: 20px; text-align: center;">
+            <h2 style="margin: 0; color: #ffffff; font-size: 22px;">
+              ${isPaid ? '✓ Payment Successful!' : '📋 Order Confirmed'}
+            </h2>
+            ${isPaid ? '<p style="margin: 8px 0 0 0; color: rgba(255,255,255,0.9); font-size: 14px;">Your payment has been processed securely</p>' : '<p style="margin: 8px 0 0 0; color: rgba(255,255,255,0.9); font-size: 14px;">Payment due at pickup</p>'}
           </div>
           
           <!-- Content -->
@@ -59,41 +74,65 @@ function getOrderPlacedEmail(order: any) {
               Hi <strong>${order.customerName}</strong>,
             </p>
             <p style="font-size: 16px; color: #333; margin-bottom: 25px;">
-              Thank you for your order! We've received it and will start preparing your delicious food shortly.
+              ${isPaid 
+                ? 'Thank you for your payment! Your order is confirmed and we\'ll start preparing it right away.' 
+                : 'Thank you for your order! Please remember to pay €' + order.total.toFixed(2) + ' when you pick up.'}
             </p>
             
-            <!-- Order Info Box -->
-            <div style="background-color: #f8f9fa; border-radius: 12px; padding: 20px; margin-bottom: 25px;">
-              <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                <span style="color: #666;">Order Number:</span>
-                <strong style="color: #1a1a1a; font-size: 18px;">${order.orderNumber}</strong>
-              </div>
-              <div style="display: flex; justify-content: space-between;">
-                <span style="color: #666;">Payment:</span>
-                <strong style="color: ${order.paymentStatus === 'paid' ? '#10b981' : '#f59e0b'};">
-                  ${order.paymentStatus === 'paid' ? '✓ Paid Online' : 'Pay at Pickup'}
-                </strong>
-              </div>
+            <!-- Invoice/Receipt Header -->
+            <div style="background-color: ${isPaid ? '#ecfdf5' : '#fef3c7'}; border: 2px solid ${isPaid ? '#10b981' : '#f59e0b'}; border-radius: 12px; padding: 20px; margin-bottom: 25px;">
+              <table style="width: 100%;">
+                <tr>
+                  <td style="padding: 5px 0;">
+                    <span style="color: #666; font-size: 13px;">Order Number</span><br>
+                    <strong style="color: #1a1a1a; font-size: 20px;">${order.orderNumber}</strong>
+                  </td>
+                  <td style="padding: 5px 0; text-align: right;">
+                    <span style="color: #666; font-size: 13px;">Date</span><br>
+                    <strong style="color: #1a1a1a; font-size: 14px;">${orderDate}</strong>
+                  </td>
+                </tr>
+                <tr>
+                  <td colspan="2" style="padding-top: 15px;">
+                    <span style="color: #666; font-size: 13px;">Payment Status</span><br>
+                    <strong style="color: ${isPaid ? '#059669' : '#d97706'}; font-size: 16px;">
+                      ${isPaid ? '✓ PAID - Card Payment' : '⏳ PENDING - Pay at Pickup'}
+                    </strong>
+                  </td>
+                </tr>
+              </table>
             </div>
             
-            <!-- Order Items -->
-            <h3 style="color: #1a1a1a; font-size: 18px; margin-bottom: 15px; border-bottom: 2px solid #8B9A46; padding-bottom: 10px;">
-              Your Order
+            <!-- Order Items / Invoice Lines -->
+            <h3 style="color: #1a1a1a; font-size: 16px; margin-bottom: 15px; border-bottom: 2px solid #8B9A46; padding-bottom: 10px;">
+              ${isPaid ? '📄 Invoice Details' : '📋 Order Details'}
             </h3>
             <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
-              ${itemsList}
-              <tr>
-                <td style="padding: 12px; color: #666;">Subtotal</td>
-                <td style="padding: 12px; text-align: right;">€${order.subtotal.toFixed(2)}</td>
-              </tr>
-              <tr>
-                <td style="padding: 12px; color: #666;">VAT (21%)</td>
-                <td style="padding: 12px; text-align: right;">€${order.tax.toFixed(2)}</td>
-              </tr>
-              <tr style="background-color: #f8f9fa;">
-                <td style="padding: 15px; font-weight: bold; font-size: 18px;">Total</td>
-                <td style="padding: 15px; text-align: right; font-weight: bold; font-size: 18px; color: #8B9A46;">€${order.total.toFixed(2)}</td>
-              </tr>
+              <thead>
+                <tr style="background-color: #f8f9fa;">
+                  <th style="padding: 10px 12px; text-align: left; font-size: 13px; color: #666; border-bottom: 2px solid #ddd;">Item</th>
+                  <th style="padding: 10px 12px; text-align: right; font-size: 13px; color: #666; border-bottom: 2px solid #ddd;">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${itemsList}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td style="padding: 10px 12px; color: #666; font-size: 14px;">Subtotal</td>
+                  <td style="padding: 10px 12px; text-align: right; font-size: 14px;">€${order.subtotal.toFixed(2)}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 12px; color: #666; font-size: 14px;">VAT (21%)</td>
+                  <td style="padding: 10px 12px; text-align: right; font-size: 14px;">€${order.tax.toFixed(2)}</td>
+                </tr>
+                <tr style="background-color: ${isPaid ? '#ecfdf5' : '#fef3c7'};">
+                  <td style="padding: 15px 12px; font-weight: bold; font-size: 18px;">
+                    ${isPaid ? 'Total Paid' : 'Amount Due'}
+                  </td>
+                  <td style="padding: 15px 12px; text-align: right; font-weight: bold; font-size: 20px; color: ${isPaid ? '#059669' : '#d97706'};">€${order.total.toFixed(2)}</td>
+                </tr>
+              </tfoot>
             </table>
             
             <!-- Pickup Info -->
@@ -101,9 +140,23 @@ function getOrderPlacedEmail(order: any) {
               <h3 style="margin: 0 0 15px 0; font-size: 18px;">📍 Pickup Location</h3>
               <p style="margin: 0 0 5px 0; font-size: 16px;"><strong>${RESTAURANT.address}</strong></p>
               <p style="margin: 0; font-size: 14px; opacity: 0.9;">
-                You'll receive another email when your order is ready!
+                You'll receive an email when your order is ready!
               </p>
             </div>
+            
+            ${isPaid ? `
+            <!-- Payment Confirmation Box -->
+            <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 15px; margin-bottom: 20px; font-size: 13px; color: #166534;">
+              <strong>💳 Payment processed securely via Stripe</strong><br>
+              This email serves as your receipt. No payment needed at pickup.
+            </div>
+            ` : `
+            <!-- Payment Reminder -->
+            <div style="background-color: #fef9c3; border: 1px solid #fde047; border-radius: 8px; padding: 15px; margin-bottom: 20px; font-size: 13px; color: #854d0e;">
+              <strong>💵 Please bring payment</strong><br>
+              Amount due at pickup: <strong>€${order.total.toFixed(2)}</strong> (Cash or Card accepted)
+            </div>
+            `}
             
             <!-- Contact -->
             <p style="font-size: 14px; color: #666; text-align: center;">
@@ -113,8 +166,12 @@ function getOrderPlacedEmail(order: any) {
           
           <!-- Footer -->
           <div style="background-color: #1a1a1a; padding: 20px; text-align: center;">
-            <p style="margin: 0; color: #999; font-size: 13px;">
-              © ${new Date().getFullYear()} M&M Factory Pizza | ${RESTAURANT.address}
+            <p style="margin: 0 0 5px 0; color: #fff; font-size: 14px; font-weight: bold;">M&M Factory Pizza</p>
+            <p style="margin: 0; color: #999; font-size: 12px;">
+              ${RESTAURANT.address} | ${RESTAURANT.phone}
+            </p>
+            <p style="margin: 10px 0 0 0; color: #666; font-size: 11px;">
+              © ${new Date().getFullYear()} M&M Factory Pizza. All rights reserved.
             </p>
           </div>
         </div>
@@ -227,6 +284,15 @@ function getStatusUpdateEmail(order: any, newStatus: string) {
 
 // Admin notification email for new orders
 function getAdminNewOrderEmail(order: any) {
+  const isPaid = order.paymentStatus === 'paid';
+  const orderDate = new Date().toLocaleDateString('en-GB', { 
+    day: '2-digit', 
+    month: 'short', 
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+  
   const itemsList = order.items.map((item: any) => 
     `<tr>
       <td style="padding: 10px; border-bottom: 1px solid #eee;">
@@ -239,7 +305,7 @@ function getAdminNewOrderEmail(order: any) {
   ).join('');
 
   return {
-    subject: `🍕 NEW ORDER - ${order.orderNumber} - €${order.total.toFixed(2)}`,
+    subject: `🍕 NEW ORDER ${isPaid ? '💳 PAID' : '💵 PAY@PICKUP'} - #${order.orderNumber} - €${order.total.toFixed(2)}`,
     html: `
       <!DOCTYPE html>
       <html>
@@ -247,41 +313,101 @@ function getAdminNewOrderEmail(order: any) {
       <body style="margin: 0; padding: 20px; font-family: Arial, sans-serif; background-color: #f5f5f5;">
         <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
           <!-- Header -->
-          <div style="background-color: #dc2626; padding: 20px; text-align: center;">
+          <div style="background-color: ${isPaid ? '#059669' : '#dc2626'}; padding: 20px; text-align: center;">
             <h1 style="margin: 0; color: #ffffff; font-size: 24px;">🍕 NEW ORDER!</h1>
+            <p style="margin: 8px 0 0 0; color: rgba(255,255,255,0.9); font-size: 14px;">${orderDate}</p>
+          </div>
+          
+          <!-- Payment Status Banner -->
+          <div style="background-color: ${isPaid ? '#ecfdf5' : '#fef3c7'}; border-bottom: 3px solid ${isPaid ? '#10b981' : '#f59e0b'}; padding: 15px; text-align: center;">
+            <span style="font-size: 20px; font-weight: bold; color: ${isPaid ? '#059669' : '#d97706'};">
+              ${isPaid ? '💳 PAYMENT RECEIVED' : '💵 PAYMENT DUE AT PICKUP'}
+            </span>
           </div>
           
           <!-- Order Info -->
           <div style="padding: 25px;">
-            <div style="background-color: #fef3c7; border: 2px solid #f59e0b; border-radius: 10px; padding: 15px; margin-bottom: 20px;">
-              <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                <span style="font-weight: bold; font-size: 18px;">Order #${order.orderNumber}</span>
-                <span style="font-weight: bold; font-size: 18px; color: #059669;">€${order.total.toFixed(2)}</span>
-              </div>
-              <div style="color: #666;">
-                Payment: <strong style="color: ${order.paymentStatus === 'paid' ? '#059669' : '#f59e0b'};">${order.paymentStatus === 'paid' ? '✓ PAID' : '💵 Pay at Pickup'}</strong>
-              </div>
+            <!-- Order Summary Box -->
+            <div style="background-color: #f8f9fa; border: 2px solid #e5e7eb; border-radius: 10px; padding: 20px; margin-bottom: 20px;">
+              <table style="width: 100%;">
+                <tr>
+                  <td style="padding: 5px 0;">
+                    <span style="color: #666; font-size: 13px;">Order Number</span><br>
+                    <strong style="font-size: 22px; color: #1a1a1a;">#${order.orderNumber}</strong>
+                  </td>
+                  <td style="padding: 5px 0; text-align: right;">
+                    <span style="color: #666; font-size: 13px;">Order Total</span><br>
+                    <strong style="font-size: 26px; color: ${isPaid ? '#059669' : '#d97706'};">€${order.total.toFixed(2)}</strong>
+                  </td>
+                </tr>
+              </table>
+            </div>
+            
+            <!-- Payment Details -->
+            <div style="background-color: ${isPaid ? '#f0fdf4' : '#fefce8'}; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+              <h3 style="margin: 0 0 10px 0; font-size: 14px; color: #666;">💰 PAYMENT INFORMATION</h3>
+              <table style="width: 100%;">
+                <tr>
+                  <td style="padding: 3px 0; color: #333;"><strong>Status:</strong></td>
+                  <td style="padding: 3px 0; text-align: right;">
+                    <span style="background-color: ${isPaid ? '#dcfce7' : '#fef08a'}; color: ${isPaid ? '#166534' : '#854d0e'}; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: bold;">
+                      ${isPaid ? '✓ PAID' : '⏳ PENDING'}
+                    </span>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 3px 0; color: #333;"><strong>Method:</strong></td>
+                  <td style="padding: 3px 0; text-align: right; color: #333;">${isPaid ? 'Card (Stripe)' : 'Cash/Card at Pickup'}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 3px 0; color: #333;"><strong>Amount:</strong></td>
+                  <td style="padding: 3px 0; text-align: right; color: #333; font-weight: bold;">€${order.total.toFixed(2)}</td>
+                </tr>
+              </table>
+              ${!isPaid ? `<p style="margin: 10px 0 0 0; padding: 10px; background-color: #fef08a; border-radius: 6px; font-size: 13px; color: #854d0e;">
+                <strong>⚠️ Remember:</strong> Collect €${order.total.toFixed(2)} from customer at pickup
+              </p>` : ''}
             </div>
             
             <!-- Customer Info -->
-            <h3 style="margin: 0 0 10px 0; color: #333; border-bottom: 2px solid #8B9A46; padding-bottom: 8px;">👤 Customer</h3>
-            <p style="margin: 5px 0;"><strong>Name:</strong> ${order.customerName}</p>
-            <p style="margin: 5px 0;"><strong>Phone:</strong> <a href="tel:${order.customerPhone}">${order.customerPhone}</a></p>
-            <p style="margin: 5px 0 20px;"><strong>Email:</strong> ${order.customerEmail}</p>
+            <h3 style="margin: 0 0 10px 0; color: #333; border-bottom: 2px solid #8B9A46; padding-bottom: 8px;">👤 Customer Details</h3>
+            <table style="width: 100%; margin-bottom: 20px;">
+              <tr>
+                <td style="padding: 5px 0; color: #666; width: 80px;">Name:</td>
+                <td style="padding: 5px 0; color: #333;"><strong>${order.customerName}</strong></td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; color: #666;">Phone:</td>
+                <td style="padding: 5px 0;"><a href="tel:${order.customerPhone}" style="color: #2563eb; text-decoration: none; font-weight: bold;">${order.customerPhone}</a></td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0; color: #666;">Email:</td>
+                <td style="padding: 5px 0;"><a href="mailto:${order.customerEmail}" style="color: #2563eb; text-decoration: none;">${order.customerEmail}</a></td>
+              </tr>
+            </table>
             
             <!-- Order Items -->
             <h3 style="margin: 0 0 10px 0; color: #333; border-bottom: 2px solid #8B9A46; padding-bottom: 8px;">📋 Order Items</h3>
             <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
               ${itemsList}
-              <tr style="background-color: #f0f0f0;">
-                <td style="padding: 12px; font-weight: bold;">TOTAL</td>
-                <td style="padding: 12px; text-align: right; font-weight: bold; font-size: 18px;">€${order.total.toFixed(2)}</td>
+              <tr style="background-color: #f8f9fa;">
+                <td style="padding: 8px 10px; color: #666; font-size: 14px;">Subtotal</td>
+                <td style="padding: 8px 10px; text-align: right; font-size: 14px;">€${order.subtotal.toFixed(2)}</td>
+              </tr>
+              <tr style="background-color: #f8f9fa;">
+                <td style="padding: 8px 10px; color: #666; font-size: 14px;">VAT (21%)</td>
+                <td style="padding: 8px 10px; text-align: right; font-size: 14px;">€${order.tax.toFixed(2)}</td>
+              </tr>
+              <tr style="background-color: ${isPaid ? '#dcfce7' : '#fef08a'};">
+                <td style="padding: 12px 10px; font-weight: bold; font-size: 16px;">${isPaid ? 'Total Paid' : 'Total Due'}</td>
+                <td style="padding: 12px 10px; text-align: right; font-weight: bold; font-size: 20px; color: ${isPaid ? '#059669' : '#d97706'};">€${order.total.toFixed(2)}</td>
               </tr>
             </table>
             
             ${order.notes ? `
-            <div style="background-color: #fef3c7; border-radius: 8px; padding: 12px; margin-top: 15px;">
-              <strong>📝 Notes:</strong> ${order.notes}
+            <div style="background-color: #fef3c7; border-radius: 8px; padding: 12px; margin-bottom: 20px;">
+              <strong>📝 Customer Notes:</strong><br>
+              <span style="color: #92400e;">${order.notes}</span>
             </div>
             ` : ''}
             
