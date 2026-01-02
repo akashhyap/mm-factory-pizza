@@ -2,6 +2,138 @@
 // Interactive Menu section with cart functionality
 // This replaces static menu with Add to Cart buttons
 import { InteractiveMenu } from './menu/InteractiveMenu';
+import { getImage } from 'astro:assets';
+import type { MenuItem } from '../types';
+
+// Import all menu images for Astro optimization
+import margheritaImg from '../assets/margherita.jpg';
+import stagionImg from '../assets/4-stagion.jpg';
+import vegetarianaImg from '../assets/vegetariana.jpg';
+import parmaImg from '../assets/parma.jpg';
+import formaggiImg from '../assets/4-formaggi.jpg';
+import islasBalearsImg from '../assets/islas-baleares.jpg';
+import calzoneClassicoImg from '../assets/calzone-calcico.jpg';
+import calzoneVegetarianoImg from '../assets/vegetariano-calzone.jpg';
+import calzoneFormaggiImg from '../assets/4-formaggi-calzone.jpg';
+
+// Optimize images using Astro's getImage
+const optimizedMargherita = await getImage({ src: margheritaImg, width: 400, format: 'webp' });
+const optimizedStagion = await getImage({ src: stagionImg, width: 400, format: 'webp' });
+const optimizedVegetariana = await getImage({ src: vegetarianaImg, width: 400, format: 'webp' });
+const optimizedParma = await getImage({ src: parmaImg, width: 400, format: 'webp' });
+const optimizedFormaggi = await getImage({ src: formaggiImg, width: 400, format: 'webp' });
+const optimizedIslasBaleares = await getImage({ src: islasBalearsImg, width: 400, format: 'webp' });
+const optimizedCalzoneClassico = await getImage({ src: calzoneClassicoImg, width: 400, format: 'webp' });
+const optimizedCalzoneVegetariano = await getImage({ src: calzoneVegetarianoImg, width: 400, format: 'webp' });
+const optimizedCalzoneFormaggi = await getImage({ src: calzoneFormaggiImg, width: 400, format: 'webp' });
+
+// Menu data with optimized image URLs
+const featuredPizzas: MenuItem[] = [
+  { 
+    id: 'pizza-1',
+    name: "Margherita", 
+    nameIt: "Margherita",
+    description: "Classic pizza with tomato sauce and mozzarella cheese", 
+    descriptionIt: "Tomate y mozzarella",
+    price: 9.50,
+    category: 'pizza',
+    isVegetarian: true,
+    isPopular: true,
+    image: optimizedMargherita.src
+  },
+  { 
+    id: 'pizza-7',
+    name: "4 Stagioni", 
+    nameIt: "Quattro Stagioni",
+    description: "Tomato sauce, mozzarella, ham, mushrooms, salami, artichokes", 
+    descriptionIt: "Tomate, mozzarella, jamón, champiñones, salami, alcachofas",
+    price: 9.50,
+    category: 'pizza',
+    isVegetarian: false,
+    image: optimizedStagion.src
+  },
+  { 
+    id: 'pizza-14',
+    name: "Vegetariana", 
+    nameIt: "Vegetariana",
+    description: "Tomato sauce, mozzarella, fresh vegetables and basil oil", 
+    descriptionIt: "Tomate, mozzarella, verduras frescas y aceite de albahaca",
+    price: 9.50,
+    category: 'pizza',
+    isVegetarian: true,
+    image: optimizedVegetariana.src
+  },
+  { 
+    id: 'pizza-22',
+    name: "Parma", 
+    nameIt: "Parma",
+    description: "Tomato sauce, mozzarella, serrano ham, arugula and parmesan", 
+    descriptionIt: "Tomate, mozzarella, jamón serrano, rúcula y parmesano",
+    price: 9.50,
+    category: 'pizza',
+    isVegetarian: false,
+    image: optimizedParma.src
+  },
+  { 
+    id: 'pizza-18',
+    name: "4 Formaggi", 
+    nameIt: "Quattro Formaggi",
+    description: "Tomato sauce, mozzarella and 4 mixed cheeses", 
+    descriptionIt: "Tomate, mozzarella y 4 quesos variados",
+    price: 9.50,
+    category: 'pizza',
+    isVegetarian: true,
+    image: optimizedFormaggi.src
+  },
+  { 
+    id: 'pizza-23',
+    name: "Islas Baleares", 
+    nameIt: "Isole Baleari",
+    description: "Tomato sauce, mozzarella, sobrasada, Mahon cheese and honey", 
+    descriptionIt: "Tomate, mozzarella, sobrasada, queso mahón y miel",
+    price: 9.50,
+    category: 'pizza',
+    isVegetarian: false,
+    isPopular: true,
+    image: optimizedIslasBaleares.src
+  },
+];
+
+const calzones: MenuItem[] = [
+  { 
+    id: 'calzone-32',
+    name: "Clasico", 
+    nameIt: "Classico",
+    description: "Tomato sauce, mozzarella cheese, ham and mushrooms", 
+    descriptionIt: "Tomate, mozzarella, jamón y champiñones",
+    price: 9.50,
+    category: 'calzone',
+    isVegetarian: false,
+    image: optimizedCalzoneClassico.src
+  },
+  { 
+    id: 'calzone-33',
+    name: "Vegetariano", 
+    nameIt: "Vegetariano",
+    description: "Tomato sauce, mozzarella cheese and fresh vegetables", 
+    descriptionIt: "Tomate, mozzarella y verduras frescas",
+    price: 9.50,
+    category: 'calzone',
+    isVegetarian: true,
+    image: optimizedCalzoneVegetariano.src
+  },
+  { 
+    id: 'calzone-34',
+    name: "4 Formaggi", 
+    nameIt: "Quattro Formaggi",
+    description: "Tomato sauce, mozzarella cheese and 4 mixed cheeses", 
+    descriptionIt: "Tomate, mozzarella y 4 quesos variados",
+    price: 9.50,
+    category: 'calzone',
+    isVegetarian: true,
+    image: optimizedCalzoneFormaggi.src
+  },
+];
 ---
 
 <section id="menu" class="py-20 md:py-28 bg-white relative overflow-hidden">
@@ -38,7 +170,11 @@ import { InteractiveMenu } from './menu/InteractiveMenu';
     </div>
 
     <!-- Interactive Menu with Cart -->
-    <InteractiveMenu client:load />
+    <InteractiveMenu 
+      client:load 
+      pizzas={featuredPizzas}
+      calzones={calzones}
+    />
 
     <!-- View All Menu Button -->
     <div class="text-center mt-12">

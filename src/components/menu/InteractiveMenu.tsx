@@ -4,124 +4,23 @@ import React from 'react';
 import type { MenuItem } from '../../types';
 import { MenuItemCard } from './MenuItemCard';
 
-// Menu data converted to MenuItem format
-const featuredPizzas: MenuItem[] = [
-  { 
-    id: 'pizza-1',
-    name: "Margherita", 
-    nameIt: "Margherita",
-    description: "Classic pizza with tomato sauce and mozzarella cheese", 
-    descriptionIt: "Tomate y mozzarella",
-    price: 9.50,
-    category: 'pizza',
-    isVegetarian: true,
-    isPopular: true,
-    image: '/src/assets/margherita.jpg'
-  },
-  { 
-    id: 'pizza-7',
-    name: "4 Stagioni", 
-    nameIt: "Quattro Stagioni",
-    description: "Tomato sauce, mozzarella, ham, mushrooms, salami, artichokes", 
-    descriptionIt: "Tomate, mozzarella, jamón, champiñones, salami, alcachofas",
-    price: 9.50,
-    category: 'pizza',
-    isVegetarian: false,
-    image: '/src/assets/4-stagion.jpg'
-  },
-  { 
-    id: 'pizza-14',
-    name: "Vegetariana", 
-    nameIt: "Vegetariana",
-    description: "Tomato sauce, mozzarella, fresh vegetables and basil oil", 
-    descriptionIt: "Tomate, mozzarella, verduras frescas y aceite de albahaca",
-    price: 9.50,
-    category: 'pizza',
-    isVegetarian: true,
-    image: '/src/assets/vegetariana.jpg'
-  },
-  { 
-    id: 'pizza-22',
-    name: "Parma", 
-    nameIt: "Parma",
-    description: "Tomato sauce, mozzarella, serrano ham, arugula and parmesan", 
-    descriptionIt: "Tomate, mozzarella, jamón serrano, rúcula y parmesano",
-    price: 9.50,
-    category: 'pizza',
-    isVegetarian: false,
-    image: '/src/assets/parma.jpg'
-  },
-  { 
-    id: 'pizza-18',
-    name: "4 Formaggi", 
-    nameIt: "Quattro Formaggi",
-    description: "Tomato sauce, mozzarella and 4 mixed cheeses", 
-    descriptionIt: "Tomate, mozzarella y 4 quesos variados",
-    price: 9.50,
-    category: 'pizza',
-    isVegetarian: true,
-    image: '/src/assets/4-formaggi.jpg'
-  },
-  { 
-    id: 'pizza-23',
-    name: "Islas Baleares", 
-    nameIt: "Isole Baleari",
-    description: "Tomato sauce, mozzarella, sobrasada, Mahon cheese and honey", 
-    descriptionIt: "Tomate, mozzarella, sobrasada, queso mahón y miel",
-    price: 9.50,
-    category: 'pizza',
-    isVegetarian: false,
-    isPopular: true,
-    image: '/src/assets/islas-baleares.jpg'
-  },
-];
-
-const calzones: MenuItem[] = [
-  { 
-    id: 'calzone-32',
-    name: "Clasico", 
-    nameIt: "Classico",
-    description: "Tomato sauce, mozzarella cheese, ham and mushrooms", 
-    descriptionIt: "Tomate, mozzarella, jamón y champiñones",
-    price: 9.50,
-    category: 'calzone',
-    isVegetarian: false,
-    image: '/src/assets/calzone-calcico.jpg'
-  },
-  { 
-    id: 'calzone-33',
-    name: "Vegetariano", 
-    nameIt: "Vegetariano",
-    description: "Tomato sauce, mozzarella cheese and fresh vegetables", 
-    descriptionIt: "Tomate, mozzarella y verduras frescas",
-    price: 9.50,
-    category: 'calzone',
-    isVegetarian: true,
-    image: '/src/assets/vegetariano-calzone.jpg'
-  },
-  { 
-    id: 'calzone-34',
-    name: "4 Formaggi", 
-    nameIt: "Quattro Formaggi",
-    description: "Tomato sauce, mozzarella cheese and 4 mixed cheeses", 
-    descriptionIt: "Tomate, mozzarella y 4 quesos variados",
-    price: 9.50,
-    category: 'calzone',
-    isVegetarian: true,
-    image: '/src/assets/4-formaggi-calzone.jpg'
-  },
-];
-
 interface InteractiveMenuProps {
+  pizzas?: MenuItem[];
+  calzones?: MenuItem[];
   showPizzas?: boolean;
   showCalzones?: boolean;
 }
 
-export function InteractiveMenu({ showPizzas = true, showCalzones = true }: InteractiveMenuProps) {
+export function InteractiveMenu({ 
+  pizzas = [], 
+  calzones = [], 
+  showPizzas = true, 
+  showCalzones = true 
+}: InteractiveMenuProps) {
   return (
     <div className="space-y-16">
       {/* Pizzas Section */}
-      {showPizzas && (
+      {showPizzas && pizzas.length > 0 && (
         <div>
           <div className="flex items-center gap-4 mb-8">
             <div className="w-12 h-12 bg-accent-red rounded-2xl flex items-center justify-center shadow-lg">
@@ -140,7 +39,7 @@ export function InteractiveMenu({ showPizzas = true, showCalzones = true }: Inte
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {featuredPizzas.map((pizza) => (
+            {pizzas.map((pizza) => (
               <MenuItemCard key={pizza.id} item={pizza} />
             ))}
           </div>
@@ -148,7 +47,7 @@ export function InteractiveMenu({ showPizzas = true, showCalzones = true }: Inte
       )}
       
       {/* Calzones Section */}
-      {showCalzones && (
+      {showCalzones && calzones.length > 0 && (
         <div>
           <div className="flex items-center gap-4 mb-8">
             <div className="w-12 h-12 bg-olive rounded-2xl flex items-center justify-center shadow-lg">
