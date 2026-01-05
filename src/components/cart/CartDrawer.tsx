@@ -33,7 +33,7 @@ export function CartDrawer() {
           </div>
           <h3 className="text-lg font-semibold text-charcoal mb-2">Your cart is empty</h3>
           <p className="text-gray-500 text-sm mb-4">Add some delicious items from our menu!</p>
-          <Button onClick={closeDrawer} variant="secondary">
+          <Button onClick={() => { closeDrawer(); window.location.href = '/menu'; }} variant="secondary">
             Browse Menu
           </Button>
         </div>

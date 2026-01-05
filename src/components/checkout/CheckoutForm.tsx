@@ -263,7 +263,7 @@ export function CheckoutForm() {
         </div>
         <h2 className="text-2xl font-bold text-charcoal mb-3">Your cart is empty</h2>
         <p className="text-gray-500 mb-6">Add some delicious items from our menu to get started!</p>
-        <Button onClick={() => window.location.href = '/#menu'} variant="primary" size="lg">
+        <Button onClick={() => window.location.href = '/menu'} variant="primary" size="lg">
           Browse Menu
         </Button>
       </div>
