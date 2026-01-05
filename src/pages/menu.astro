@@ -1,15 +1,75 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import Header from '../components/Header.astro';
-import MenuOld from '../components/Menu-old.astro';
 import Footer from '../components/Footer.astro';
+import { CartProvider } from '../components/cart/CartProvider';
+import { CartDrawer } from '../components/cart/CartDrawer';
+import { InteractiveMenu } from '../components/menu/InteractiveMenu';
+import type { MenuItem } from '../types';
+
+// Import images
+import margheritaImg from '../assets/margherita.jpg';
+import stagioni4Img from '../assets/4-stagion.jpg';
+import vegetarianaImg from '../assets/vegetariana.jpg';
+import parmaImg from '../assets/parma.jpg';
+import formaggi4Img from '../assets/4-formaggi.jpg';
+import islasBalearesImg from '../assets/islas-baleares.jpg';
+import calzoneClassicoImg from '../assets/calzone-calcico.jpg';
+import calzoneVegetarianoImg from '../assets/vegetariano-calzone.jpg';
+import calzone4FormaggiImg from '../assets/4-formaggi-calzone.jpg';
+import mmOutletImg from '../assets/m-m-outlet.jpg';
+
+// Default pizza image for items without specific images
+const defaultPizzaImg = margheritaImg.src;
+const defaultCalzoneImg = calzoneClassicoImg.src;
+
+// All 31 pizzas with full data
+const pizzas: MenuItem[] = [
+  { id: 'pizza-1', name: 'Margherita', description: 'Tomate y mozzarella / Tomato sauce and mozzarella cheese', price: 9.50, category: 'pizza', image: margheritaImg.src, isVegetarian: true, isPopular: true },
+  { id: 'pizza-2', name: 'Prosciutto', description: 'Tomate, mozzarella y jamón / Tomato sauce, mozzarella cheese and ham', price: 9.50, category: 'pizza', image: defaultPizzaImg, isVegetarian: false },
+  { id: 'pizza-3', name: 'Funghi', description: 'Tomate, mozzarella y champiñones / Tomato sauce, mozzarella cheese and mushrooms', price: 9.50, category: 'pizza', image: defaultPizzaImg, isVegetarian: true },
+  { id: 'pizza-4', name: 'Genovese', description: 'Tomate, mozzarella, jamón y champiñones / Tomato sauce, mozzarella cheese, ham and mushrooms', price: 9.50, category: 'pizza', image: defaultPizzaImg, isVegetarian: false },
+  { id: 'pizza-5', name: 'Carciofi', description: 'Tomate, mozzarella y alcachofas / Tomato sauce, mozzarella cheese and artichokes', price: 9.50, category: 'pizza', image: defaultPizzaImg, isVegetarian: true },
+  { id: 'pizza-6', name: 'Salame', description: 'Tomate, mozzarella y salami / Tomato sauce, mozzarella cheese and salami', price: 9.50, category: 'pizza', image: defaultPizzaImg, isVegetarian: false },
+  { id: 'pizza-7', name: '4 Stagioni', description: 'Tomate, mozzarella, jamón, champiñones, salami, alcachofas / Tomato sauce, mozzarella, ham, mushrooms, salami, artichokes', price: 9.50, category: 'pizza', image: stagioni4Img.src, isVegetarian: false, isPopular: true },
+  { id: 'pizza-8', name: 'Siciliana', description: 'Tomate, mozzarella, berenjena, tomate seco y albahaca / Tomato sauce, mozzarella, eggplant, dried tomato and basil', price: 9.50, category: 'pizza', image: defaultPizzaImg, isVegetarian: true },
+  { id: 'pizza-9', name: 'Tonno e Cipolla', description: 'Tomate, mozzarella, atún y cebolla / Tomato sauce, mozzarella cheese, tuna fish and onion', price: 9.50, category: 'pizza', image: defaultPizzaImg, isVegetarian: false },
+  { id: 'pizza-10', name: 'Campagnola', description: 'Tomate, mozzarella, brócoli, espinacas y champiñones / Tomato sauce, mozzarella, broccoli, spinach, mushrooms', price: 9.50, category: 'pizza', image: defaultPizzaImg, isVegetarian: true },
+  { id: 'pizza-11', name: 'Etna', description: 'Tomate, mozzarella, salami picante y aceite picante casero / Tomato sauce, mozzarella, spicy salami and homemade spicy oil', price: 9.50, category: 'pizza', image: defaultPizzaImg, isVegetarian: false, isSpicy: true },
+  { id: 'pizza-12', name: 'San Giovese', description: 'Tomate, mozzarella, espinacas y gambas / Tomato sauce, mozzarella cheese, spinach and prawns', price: 9.50, category: 'pizza', image: defaultPizzaImg, isVegetarian: false },
+  { id: 'pizza-13', name: 'Mari e Monti', description: 'Tomate, mozzarella, brócoli, gambas y piñones / Tomato sauce, mozzarella, broccoli, prawns and pinions', price: 9.50, category: 'pizza', image: defaultPizzaImg, isVegetarian: false },
+  { id: 'pizza-14', name: 'Vegetariana', description: 'Tomate, mozzarella, verduras frescas y aceite de albahaca / Tomato sauce, mozzarella, fresh vegetables and basil oil', price: 9.50, category: 'pizza', image: vegetarianaImg.src, isVegetarian: true, isPopular: true },
+  { id: 'pizza-15', name: 'Palermitana', description: 'Tomate, mozzarella, alcachofas, salami, aceitunas y anchoas / Tomato sauce, mozzarella, artichokes, salami, olives and anchovies', price: 9.50, category: 'pizza', image: defaultPizzaImg, isVegetarian: false },
+  { id: 'pizza-16', name: 'Italia', description: 'Tomate, mozzarella, tomate fresco, mozzarella fresca y albahaca / Tomato sauce, mozzarella, fresh tomato, fresh mozzarella and basil', price: 9.50, category: 'pizza', image: defaultPizzaImg, isVegetarian: true },
+  { id: 'pizza-17', name: 'Parmigiana', description: 'Tomate, mozzarella, berenjena, jamón, huevo y parmesano / Tomato sauce, mozzarella, eggplant, ham, egg and parmesan', price: 9.50, category: 'pizza', image: defaultPizzaImg, isVegetarian: false },
+  { id: 'pizza-18', name: '4 Formaggi', description: 'Tomate, mozzarella y 4 quesos variados / Tomato sauce, mozzarella and 4 mixed cheeses', price: 9.50, category: 'pizza', image: formaggi4Img.src, isVegetarian: true, isPopular: true },
+  { id: 'pizza-19', name: 'Pancetta', description: 'Tomate, mozzarella, bacon, guisantes y pimiento rojo / Tomato sauce, mozzarella, bacon, green peas and red pepper', price: 9.50, category: 'pizza', image: defaultPizzaImg, isVegetarian: false },
+  { id: 'pizza-20', name: 'Frutti di Mare', description: 'Tomate, mozzarella, marisco, ajo y perejil / Tomato sauce, mozzarella, seafood, garlic and parsley', price: 9.50, category: 'pizza', image: defaultPizzaImg, isVegetarian: false },
+  { id: 'pizza-22', name: 'Parma', description: 'Tomate, mozzarella, jamón serrano, rúcula y parmesano / Tomato sauce, mozzarella, serrano ham, arugula and parmesan', price: 9.50, category: 'pizza', image: parmaImg.src, isVegetarian: false, isPopular: true },
+  { id: 'pizza-23', name: 'Islas Baleares', description: 'Tomate, mozzarella, sobrasada, queso mahón y miel / Tomato sauce, mozzarella, sobrasada, Mahon cheese and honey', price: 9.50, category: 'pizza', image: islasBalearesImg.src, isVegetarian: false, isPopular: true },
+  { id: 'pizza-24', name: 'Barbacoa', description: 'Tomate, mozzarella, carne, huevo y salsa barbacoa / Tomato sauce, mozzarella, meat, egg and barbecue sauce', price: 9.50, category: 'pizza', image: defaultPizzaImg, isVegetarian: false },
+  { id: 'pizza-25', name: 'Hawaiana', description: 'Tomate, mozzarella, jamón y piña / Tomato sauce, mozzarella, ham and pineapple', price: 9.50, category: 'pizza', image: defaultPizzaImg, isVegetarian: false },
+  { id: 'pizza-26', name: 'Catanese', description: 'Tomate, mozzarella, pollo, huevo y mayonesa / Tomato sauce, mozzarella, chicken, egg and mayonnaise', price: 9.50, category: 'pizza', image: defaultPizzaImg, isVegetarian: false },
+  { id: 'pizza-27', name: 'Sirgusana', description: 'Tomate, mozzarella, mejillones, pimienta negra, cebolla, ajo y perejil / Tomato sauce, mozzarella, mussels, black pepper, onion, garlic and parsley', price: 9.50, category: 'pizza', image: defaultPizzaImg, isVegetarian: false },
+  { id: 'pizza-28', name: 'Vittorise', description: 'Tomate, mozzarella, berenjena, champiñones y gorgonzola / Tomato sauce, mozzarella, eggplant, mushrooms and gorgonzola', price: 9.50, category: 'pizza', image: defaultPizzaImg, isVegetarian: true },
+  { id: 'pizza-29', name: 'Piemontese', description: 'Tomate, mozzarella, calabacín y queso emmental / Tomato sauce, mozzarella, zucchini and emmental cheese', price: 9.50, category: 'pizza', image: defaultPizzaImg, isVegetarian: true },
+  { id: 'pizza-30', name: 'Capri', description: 'Tomate, mozzarella, queso de cabra, tomate fresco y rúcula / Tomato sauce, mozzarella, goat cheese, fresh tomato and arugula', price: 9.50, category: 'pizza', image: defaultPizzaImg, isVegetarian: true },
+  { id: 'pizza-31', name: 'La Dolce Vita', description: 'Pizza con nutella y azúcar glass / Pizza with nutella and powdered sugar', price: 9.50, category: 'pizza', image: defaultPizzaImg, isVegetarian: true },
+];
+
+// All 3 calzones
+const calzones: MenuItem[] = [
+  { id: 'calzone-32', name: 'Clasico', description: 'Tomate, mozzarella, jamón y champiñones / Tomato sauce, mozzarella, ham and mushrooms', price: 9.50, category: 'calzone', image: calzoneClassicoImg.src, isVegetarian: false, isPopular: true },
+  { id: 'calzone-33', name: 'Vegetariano', description: 'Tomate, mozzarella y verduras frescas / Tomato sauce, mozzarella and fresh vegetables', price: 9.50, category: 'calzone', image: calzoneVegetarianoImg.src, isVegetarian: true },
+  { id: 'calzone-34', name: '4 Formaggi', description: 'Tomate, mozzarella y 4 quesos variados / Tomato sauce, mozzarella and 4 mixed cheeses', price: 9.50, category: 'calzone', image: calzone4FormaggiImg.src, isVegetarian: true },
+];
 ---
 
 <Layout title="Full Menu | M&M Factory Pizza">
   <Header />
   <main>
     <!-- Menu Hero Section -->
-    <section class="py-16 md:py-20 bg-cream relative overflow-hidden">
+    <section class="pt-28 pb-12 md:pt-32 md:pb-16 bg-cream relative overflow-hidden">
       <div class="absolute top-0 right-0 w-96 h-96 bg-olive/5 rounded-full translate-x-1/2 -translate-y-1/2 blur-3xl"></div>
       <div class="absolute bottom-0 left-0 w-72 h-72 bg-accent-red/5 rounded-full -translate-x-1/2 translate-y-1/2 blur-3xl"></div>
       
@@ -45,7 +105,55 @@ import Footer from '../components/Footer.astro';
       </div>
     </section>
     
-    <MenuOld />
+    <!-- Interactive Menu Section -->
+    <section class="py-12 md:py-16 bg-white relative overflow-hidden">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+        <CartProvider client:load>
+          <InteractiveMenu 
+            client:load 
+            pizzas={pizzas} 
+            calzones={calzones}
+          />
+          <CartDrawer client:load />
+        </CartProvider>
+        
+        <!-- Notes - Elegant bottom bar -->
+        <div class="relative mt-16">
+          <div class="absolute inset-0 bg-gradient-to-r from-charcoal via-charcoal to-charcoal rounded-2xl"></div>
+          <div class="relative rounded-2xl p-8 md:p-10">
+            <div class="flex flex-col lg:flex-row items-center justify-between gap-8">
+              <!-- Left side - Important notes -->
+              <div class="flex flex-wrap items-center justify-center lg:justify-start gap-4 text-white/80">
+                <div class="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-full">
+                  <svg class="w-4 h-4 text-accent-red" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                  </svg>
+                  <span class="text-sm">No changes accepted</span>
+                </div>
+                <div class="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-full">
+                  <span class="text-sm">Extra ingredients <span class="text-white font-semibold">€1.50</span></span>
+                </div>
+                <div class="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-full">
+                  <span class="text-sm">Prawns/Salmon <span class="text-white font-semibold">+€2</span></span>
+                </div>
+              </div>
+              
+              <!-- Right side - Legend -->
+              <div class="flex items-center gap-4 text-white/60">
+                <div class="flex items-center gap-2">
+                  <span class="px-2 py-1 bg-olive text-white text-xs font-semibold rounded-full">🌱 Veg</span>
+                  <span class="text-sm">Vegetarian</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="px-2 py-1 bg-accent-red text-white text-xs font-semibold rounded-full">🌶️</span>
+                  <span class="text-sm">Spicy</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
   </main>
   <Footer />
-</Layout>
+</Layout></Layout>
